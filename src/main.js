@@ -21,7 +21,7 @@ let config = {
     },
     width: 800,
     height: 600,
-    scene: [TitleScene, Level1, Level2, Level3, GameOverScene, VictoryScene]   // scenes go here
+    scene: [Load, Platformer]   // scenes go here
 }
 
 
