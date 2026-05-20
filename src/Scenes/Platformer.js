@@ -14,6 +14,7 @@ class Platformer extends Phaser.Scene {
         super("Platformer");
     }
 
+    // receives data passed from scene.start()
     init(data) {
         this.currentLevel  = data.level || 1;
         this.lives         = data.lives !== undefined ? data.lives : 3;
@@ -69,6 +70,7 @@ class Platformer extends Phaser.Scene {
         my.sprite.springs = this.physics.add.staticGroup();
         this.doorSprite   = null;
 
+        // places objects
         if(objectLayer) {
             objectLayer.objects.forEach(obj => {
                 // center things
