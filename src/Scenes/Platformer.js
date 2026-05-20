@@ -1,3 +1,14 @@
+const MOVE_SPEED           = 0;
+const JUMP_VELOCITY        = 0;
+const DOUBLE_JUMP_VELOCITY = 0;
+const WALL_JUMP_VX         = 0;
+const WALL_JUMP_VY         = 0;
+const LOOKAHEAD_X          = 0;
+const LOOKAHEAD_Y          = 0;
+const CAM_LERP_X           = 0;
+const CAM_LERP_Y           = 0;
+
+
 class Platformer extends Phaser.Scene {
     constructor() {
         super("Platformer");
