@@ -316,8 +316,48 @@ class Platformer extends Phaser.Scene {
             this.emitJumpParticles(player.x, player.y + 10, false);
         }
 
-
+        // Wall sliding
         let isWallSliding = false;
+        let wallDir = 0;
+        if(!onGround && player.canWallJump) {
+            if(goLeft && onWallLeft && body.velocity.y > 0) {
+                isWallSliding = true;
+                wallDir = -1;
+            }
+            if(goRight && onWallRight && body.velocity.y > 0) {
+                isWallSliding = true;
+                wallDir = 1;
+            }
+        }
+        if(wallSliding) {
+            if(body.velocity.y > 50) {
+                body.setVelocityY(50);
+            }
+        }
+
+        // Jumps
+
+        // Basic Movement
+        if(goLeft) {
+            body.setVelocityX(-MOVE_SPEED);
+            player.setFlipX(true);
+            player.anims.play("player-walk", true);
+        }
+        else if(goRight) {
+            body.setVelocityX(MOVE_SPEED);
+            player.setFlipX(false);
+            player.anims.play("player-walk", true);
+        }
+        else {
+            // decelerate slower if player is in air than on ground
+            body.setVelocityX(body.velocity.x * (onGround ? 0.75 : 0.9))
+            if(Math.abs(body.setVelocityX < 5)){
+                body.setVelocityX(0);
+            }
+            if(onGround){
+                player.anims.play("player-idle", true);
+            }
+        }
     }
 
     // FUNCTIONS 
