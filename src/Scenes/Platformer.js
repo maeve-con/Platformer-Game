@@ -380,16 +380,32 @@ class Platformer extends Phaser.Scene {
                 player.anims.play("player-idle", true);
             }
         }
+
+        if(!onGround) player.anims.play("player-jump", true);
+        this.updateParticles();
+        this.updateCamera();
+
+        // HUD refresh
+        this.scoreText.setText(`Score: ${this.score}`);
+        this.livesText.setText(`Lives: ${this.lives}`);
+        
+        this.prevOnGround = onGround;   // update character state
     }
 
-    // HELPERS 
-    // Jump functions
+    // FUNCTIONS 
+    // Jump 
     doJump(player, vy) {
         player.body.setVelocityY(vy);
         player.emitJumpParticles(player.x, player.y + 10, true);
     }
 
+    // Particles
     emitJumpParticles(x, y, isJump) {
-        my.vfx.jumpBurst.emitParticlesAt()
+        my.vfx.jumpBurst.emitParticlesAt(x - 6, y, 5);
+        my.vfx.jumpBurst.emitParticlesAt(x + 6, y, 5);
     }
+    emitDoubleJumpParticles(x, y) {
+        my.vfx.doubleJumpBurst.emitParticlesAt(x, y, 15);
+    }
+        
 }
