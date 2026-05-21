@@ -279,7 +279,45 @@ class Platformer extends Phaser.Scene {
     }
 
     update(time, delta) {
+        // stop updating if the player dies or the level completes
+        if(!my.sprite.player || this.levelComplete || this.isDying) return;     
 
+        const player = my.sprite.player;
+        const body = player.body;
+        const onGround = body.blocked.down;
+        const onWallLeft = body.blocked.left;
+        const onWallRight = body.blocked.right;
+
+        const goLeft  = cursors.left.isDown || this.wasd.left.isDown;
+        const goRight = cursors.right.isDown || this.wasd.right.isDown;
+        const goUp    = cursors.up.isDown || this.wasd.up.isDown;
+        const goDown  = cursors.down.isDown || this.wasd.down.isDown;
+        const jumpJustPressed = Phaser.Input.Keyboard.JustDown(cursors.up) || Phaser.Input.Keyboard.JustDown(this.wasd.up);
+
+        // coyote & jump buffer timers
+        if(onGround) {
+            player.coyoteTimer = 80;
+            player.hasDoubleJumped = false;
+            player.wallJumped = false;
+        }
+        else {
+            player.coyoteTimer = Math.max(0, player.coyoteTimer - delta);
+        }
+
+        if(jumpJustPressed) {
+            player.jumpBuffer = 120;
+        }
+        else {
+            player.jumpBuffer = Math.max(0, player.jumpBuffer - delta);
+        }
+
+        const justLanded = !this.prevOnGround && onGround;
+        if(justLanded) {
+            this.emitJumpParticles(player.x, player.y + 10, false);
+        }
+
+
+        let isWallSliding = false;
     }
 
     // FUNCTIONS 
