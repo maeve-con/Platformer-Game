@@ -336,6 +336,28 @@ class Platformer extends Phaser.Scene {
         }
 
         // Jumps
+        if(player.jumpBuffer > 0) {
+            if(player.coyoteTimer > 0){
+                // normal
+                this.doJump(player, -JUMP_VELOCITY);
+                player.coyoteTimer = 0;
+                player.jumpBuffer = 0;
+            }
+            else if(isWallSliding && player.canWallJump && !wallJumped){
+                // walljump
+                player.wallJumped = true;
+                player.hasDoubleJumped = false;
+                body.setVelocityY(-wallDir * WALL_JUMP_VX);
+                this.doJump(player, -WALL_JUMP_VY);
+                player.jumpBuffer = 0;
+            }
+            else if(player.canWallJump && !onGround && !player.hasDoubleJumped && player.coyoteTimer <= 0) {
+                player.hasDoubleJumped = true;
+                player.doJump(player, -DOUBLE_JUMP_VELOCITY);
+                this.emitDoubleJumpParticles(player.x, player.y);
+            }
+        }        
+
 
         // Basic Movement
         if(goLeft) {
@@ -360,5 +382,14 @@ class Platformer extends Phaser.Scene {
         }
     }
 
-    // FUNCTIONS 
+    // HELPERS 
+    // Jump functions
+    doJump(player, vy) {
+        player.body.setVelocityY(vy);
+        player.emitJumpParticles(player.x, player.y + 10, true);
+    }
+
+    emitJumpParticles(x, y, isJump) {
+        my.vfx.jumpBurst.emitParticlesAt()
+    }
 }
