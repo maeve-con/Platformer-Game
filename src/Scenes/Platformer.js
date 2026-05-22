@@ -5,8 +5,8 @@ const WALL_JUMP_VX         = 0;
 const WALL_JUMP_VY         = 0;
 const LOOKAHEAD_X          = 0;
 const LOOKAHEAD_Y          = 0;
-const CAM_LERP_X           = 0;
-const CAM_LERP_Y           = 0;
+const CAM_LERP_X           = 0.1;
+const CAM_LERP_Y           = 0.1;
 
 
 class Platformer extends Phaser.Scene {
@@ -27,9 +27,6 @@ class Platformer extends Phaser.Scene {
             doubleJump: false,
             wallJump: false
         };
-
-        this.lookaheadX = 0;
-        this.lookaheadY = 0;
     }
 
     create(){
@@ -188,8 +185,6 @@ class Platformer extends Phaser.Scene {
             alpha: {start: 0.8, end: 0},
             lifespan: {min: 120, max: 250},
             frequency: -1,
-            maxParticles: 40,
-            gravityY: 120
         });
 
         // jump/land
@@ -201,41 +196,7 @@ class Platformer extends Phaser.Scene {
             alpha: {start: 1, end: 0},
             lifespan: {min: 250, max: 500},
             frequency: -1,
-            maxParticles: 16,
-            blendMode: "ADD"
         });
-
-        // wallslide
-        my.vfx.wallSlide = this.add.particles(0, 0, "kenny-particles", {
-            frame: ["smoke_01.png", "smoke_02.png"],
-            speed: {min: 8, max: 25},
-            angle: {min: 70, max: 110},
-            scale: {start: 0.1, end: 0},
-            alpha: {start: 0.6, end: 0},
-            lifespan: {min: 200, max: 400},
-            frequency: -1,
-            maxParticles: 20, 
-            gravityY: 40
-        });
-
-        // collect burst fx
-        my.vfx.collectBurst = this.add.particles(0, 0, "kenny-particles", {
-            frame: ["star_02.png", "spark_03.png", "light_01.png"],
-            speed: {min: 80, max: 200},
-            angle: {min: 0, max: 360},
-            scale: {start: 0.3, end: 0},
-            alpha: {start: 1, end: 0},
-            lifespan: {min: 300, max: 700},
-            frequency: -1, 
-            maxParticles: 20,
-            blendMode: "ADD"
-        });
-
-        // Camera
-        this.camTargetX = my.sprite.player.x - this.scale.width / 2;
-        this.camTargetY = my.sprite.player.y - this.scale.height / 2;
-        this.cameras.main.scrollX = this.camTargetX;
-        this.cameras.main.scrollY = this.camTargetY;
 
         // Input
         cursors = this.input.keyboard.createCursorKeys();
@@ -272,10 +233,10 @@ class Platformer extends Phaser.Scene {
         }).setOrigin(1).setScrollFactor(0).setDepth(99);
 
         // Helpers
-        this.dustTimer = 0;
-        this.wallSlideTimer = 0;
         this.prevOnGround = true;
         this.camera.main.fadeIn(500, 0, 0, 0);
+        this.cameras.main.startFollow(my.sprite.player, true, CAM_LERP_X, CAM_LERP_Y);
+        this.cameras.main.setBounds(0, 0, wolrdW, worldH);
     }
 
     update(time, delta) {
@@ -382,13 +343,11 @@ class Platformer extends Phaser.Scene {
         }
 
         if(!onGround) player.anims.play("player-jump", true);
-        this.updateParticles();
-        this.updateCamera();
 
         // HUD refresh
         this.scoreText.setText(`Score: ${this.score}`);
         this.livesText.setText(`Lives: ${this.lives}`);
-        
+
         this.prevOnGround = onGround;   // update character state
     }
 
@@ -407,5 +366,168 @@ class Platformer extends Phaser.Scene {
     emitDoubleJumpParticles(x, y) {
         my.vfx.doubleJumpBurst.emitParticlesAt(x, y, 15);
     }
+
+    collectCoin(player, coin) {
+        coin.destroy();
+        this.score += 100;
+        my.vfx.collectBurst.emitParticleAt(coin.x, coin.y, 8);
+    }
+
+    collectKey(player, key) {
+        key.destroy();
+        this.hasKey = true;
+        my.vfx.collectBurst.emitParticleAt(key.x, key.y, 8);
+        this.keyText.setText("Key: ✓").setColor("#ffbb00");
+
+        if(this.doorSprite) {
+            this.doorSprite.setAlpha(1);
+            this.tweens.add({
+                targets: this.doorSprite,
+                y: this.doorSprite.y - 4,
+                duration: 500,
+                yoyo: true,
+                repeat: -1,
+                ease: "Sine.easeInOut"
+            });
+        }
+    }
+
+    completeLevel() {
+        this.levelComplete = true;
+        this.score += 500;
         
+        // dims screen for completion text
+        this.add.rectangle(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            this.scale.width,
+            this.scale.height,
+            0x000000, 0.6
+        ).setScrollFactor(0).setDepth(100);
+
+        this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2 - 60,
+            "LEVEL COMPLETE!",
+            {
+                fontFamily: "monospace",
+                fontSize:   "48px",
+                color:      "#f1c40f"
+            }
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+
+        this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            `Score: ${this.score}`,
+            {
+                fontFamily: "monospace",
+                fontSize:   "28px",
+                color:      "#f1c40f"
+            }
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+
+        // next level button
+        const button = this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2 + 60,
+            "[ NEXT LEVEL ]",
+            {
+                fontFamily: "monospace",
+                fontSize:   "32px",
+                color:      "#f1c40f"
+            }
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(100).setInteractive();
+
+        // hover fx
+        button.on("pointerover", () => button.setColor("#ffffff"));
+        button.on("pointerout", () => button.setColor("#62dd99"));
+
+        button.on("pointdown", () => {
+            const nextLevel = this.currentLevel + 1;
+
+            if(nextLevel > 3) {
+                this.cameras.main.fadeOut(500, 0, 0, 0);
+                this.cameras.main.once("camerafadeoutcomplete", () => {
+                    this.showEndScreen();
+                });
+            }
+            else {
+                const abilities = {...this.abilities}   // copy abilities rather than reference
+                if(nextLevel >= 2) abilities.doubleJump = true;
+                if(nextLevel >= 3) abilities.wallJump = true;
+
+                this.canmeras.main.fadeOut(500, 0, 0, 0);
+                this.cameras.main.once("camerafadeoutcomplete", () => {
+                    this.scene.start("Platformer", {
+                        level: nextLevel,
+                        lives: this.lives,
+                        score: this.score,
+                        abilites: abilities
+                    });
+                });
+            }
+        });
+    }
+
+    showEndScreen() {
+        this.add.rectangle(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            this.scale.width,
+            this.scale.height,
+            0x000000, 0.6
+        ).setScrollFactor(0).setDepth(100);
+
+        this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2 - 60,
+            "YOU WIN!",
+            {
+                fontFamily: "monospace",
+                fontSize:   "56px",
+                color:      "#f1c40f"
+            }
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+
+        this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            `Final Score: ${this.score}`,
+            {
+                fontFamily: "monospace",
+                fontSize:   "28px",
+                color:      "#f1c40f"
+            }
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+
+        // next level button
+        const button = this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2 + 60,
+            "[ PLAY AGAIN ]",
+            {
+                fontFamily: "monospace",
+                fontSize:   "32px",
+                color:      "#f1c40f"
+            }
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(100).setInteractive();
+
+        button.on("pointerover", () => button.setColor("#ffffff"));
+        button.on("pointerout", () => button.setColor("#62dd99"));
+
+        button.on("pointdown", () => {
+            this.cameras.main.fadeOut(500, 0, 0, 0);
+            this.cameras.main.once("camerafadeoutcomplete", () => {
+                this.scene.start("Platformer", {
+                    level: 1,
+                    lives: 3,
+                    score: 0,
+                    abilities: {doubleJump: false, wallJump: false}
+                });
+            });
+        });
+
+        this.cameras.main.fadeIn(500, 0, 0, 0);
+    }
 }
