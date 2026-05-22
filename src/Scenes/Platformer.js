@@ -1,10 +1,8 @@
-const MOVE_SPEED           = 0;
-const JUMP_VELOCITY        = 0;
-const DOUBLE_JUMP_VELOCITY = 0;
-const WALL_JUMP_VX         = 0;
-const WALL_JUMP_VY         = 0;
-const LOOKAHEAD_X          = 0;
-const LOOKAHEAD_Y          = 0;
+const MOVE_SPEED           = 200;
+const JUMP_VELOCITY        = 500;
+const DOUBLE_JUMP_VELOCITY = 400;
+const WALL_JUMP_VX         = 280;
+const WALL_JUMP_VY         = 400;
 const CAM_LERP_X           = 0.1;
 const CAM_LERP_Y           = 0.1;
 
