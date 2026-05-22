@@ -175,8 +175,7 @@ class Platformer extends Phaser.Scene {
 
         // Particles
         // running
-        my.vfx.moveTrail = this.add.particles(0, 0, "kenny-particles", {
-            frame: ["dirt_01.png", "dirt_02.png", "dirt_03.png"],
+        my.vfx.moveTrail = this.add.particles(0, 0, "dirt_01", {
             speed: {min: 10, max: 40},
             angle: {min: 160, max: 200},
             scale: {start: 0.12, end: 0},
@@ -186,8 +185,7 @@ class Platformer extends Phaser.Scene {
         });
 
         // jump/land
-        my.vfx.jumpBurst = this.add.particles(0, 0, "kenny-particles", {
-            frame: ["star_01.png", "star_02.png", "star_03.png"],
+        my.vfx.jumpBurst = this.add.particles(0, 0, "start_01", {
             speed: {min: 60, max: 160},
             angle: {min: 0, max: 360},
             scale: {start: 0.20, end: 0},
@@ -272,6 +270,14 @@ class Platformer extends Phaser.Scene {
         this.physics.overlap(player, this.ladderLayer, () => {
             if (goUp || goDown) player.isOnLadder = true;
         });
+
+        if (player.isOnLadder) {
+            player.body.setAllowGravity(false);
+            player.body.setVelocityY(0);
+            if (goUp)   player.body.setVelocityY(-150);
+            if (goDown) player.body.setVelocityY(150);
+            return; 
+        }
 
         // coyote & jump buffer timers
         if(onGround) {
