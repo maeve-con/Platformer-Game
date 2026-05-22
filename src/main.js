@@ -1,14 +1,3 @@
-// Jim Whitehead
-// Created: 4/25/2024
-// Phaser: 3.70.0
-//
-// Bullet Time
-//
-// Multiple examples of how to implement bullet firing logic using Phaser
-// 
-// Art assets from Kenny Assets:
-// https://kenney.nl/assets/
-
 // debug with extreme prejudice
 "use strict"
 
@@ -18,6 +7,16 @@ let config = {
     type: Phaser.CANVAS,
     render: {
         pixelArt: true  // prevent pixel art from getting blurred when scaled
+    },
+    physics: {
+        default: 'arcade',
+        arcade: {
+            debug: false,
+            gravity: {
+                x: 0, 
+                y: 600
+            }
+        }
     },
     width: 800,
     height: 600,
