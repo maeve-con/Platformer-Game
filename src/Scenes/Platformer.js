@@ -530,4 +530,35 @@ class Platformer extends Phaser.Scene {
 
         this.cameras.main.fadeIn(500, 0, 0, 0);
     }
+
+    playerDie() {
+        if(this.isDying) return;
+        this.isDying = true;
+        this.lives--;
+
+        this.time.delayedCall(700, () => {
+            if(this.lives <= 0) {
+                this.cameras.main.fadeOut(400, 0, 0, 0);
+                this.cameras.main.once("camerafadeoutcomplete", () => {
+                    this.scene.start("Platformer", {
+                        level: 1,
+                        lives: 3,
+                        score: 0,
+                        abilities: {doubleJump: false, wallJump: false}
+                    });
+                });
+            }
+            else {
+                this.cameras.main.fadeOut(300, 0, 0, 0);
+                this.cameras.main.once("camerafadeoutcomplete", ()=> {
+                    this.scene.restart({
+                        level: this.currentLevel,
+                        lives: this.lives,
+                        score: this.score,
+                        abilities: this.abilities
+                    });
+                });
+            }
+        });
+    }
 }
