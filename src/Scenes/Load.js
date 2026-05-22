@@ -65,6 +65,14 @@ class Load extends Phaser.Scene {
             repeat: -1
         });
 
-        this.scene.start("Platformer");
+        this.scene.start("Platformer", {
+            level:     DEBUG_LEVEL,
+            lives:     3,
+            score:     0,
+            abilities: {
+                doubleJump: DEBUG_LEVEL >= 3,
+                wallJump:   DEBUG_LEVEL >= 2
+            }
+        });
     }
 }

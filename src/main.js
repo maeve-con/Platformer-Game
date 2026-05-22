@@ -26,5 +26,5 @@ let config = {
 var cursors;
 const SCALE = 1.0;
 var my = {sprite: {}, text: {}, vfx: {}};
-
+const DEBUG_LEVEL = 2; 
 const game = new Phaser.Game(config);
