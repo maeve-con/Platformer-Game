@@ -23,10 +23,10 @@
                 10
             ],
             "scale": 1,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 843,
-                "y": 602
+                "x": 323,
+                "y": 447
             }
         },
         "Level1.tmx#tilemap-backgrounds_packed": {
@@ -36,11 +36,14 @@
             "scaleInDock": 1
         },
         "Level2.tmx": {
-            "scale": 0.5,
-            "selectedLayer": 0,
+            "expandedObjectLayers": [
+                2
+            ],
+            "scale": 1.5,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 1200,
-                "y": 318
+                "x": 554.6666666666667,
+                "y": 588
             }
         },
         "Level2.tmx#tilemap_packed": {
