@@ -1,6 +1,6 @@
 const MOVE_SPEED           = 150;
 const JUMP_VELOCITY        = 300;
-const DOUBLE_JUMP_VELOCITY = 250;
+const DOUBLE_JUMP_VELOCITY = 300;
 const SPRING_VY            = 550;
 const WALL_JUMP_VX         = 100;
 const WALL_JUMP_VY         = 250;
@@ -27,6 +27,7 @@ class Platformer extends Phaser.Scene {
         this.lastWallDir = 0;
         this.invulnTimer   = 0;
         this.walkSoundPlaying = false;
+        this.ladderSoundPlaying = false;
 
         this.abilities = data.abilities || {
             doubleJump: false,
@@ -35,6 +36,11 @@ class Platformer extends Phaser.Scene {
     }
 
     create(){
+        if (this.currentLevel === "win") {
+            this.showEndScreen();
+            return;
+        }
+        
         const mapKey = `level-${this.currentLevel}`;
         const map = this.make.tilemap({key: mapKey});
         console.log("Loading map:", mapKey);
@@ -117,6 +123,7 @@ class Platformer extends Phaser.Scene {
                         this.doorSprite = this.physics.add.sprite(cx, cy, "tilemap_packed").setFrame(obj.gid - 1).setScale(SCALE * 2);
                         this.doorSprite.body.allowGravity = false;
                         this.doorSprite.body.moves = false;
+                        this.doorSprite.body.immovable = true; 
                         this.doorSprite.setAlpha(0.4);
                         break;
 
@@ -194,6 +201,12 @@ class Platformer extends Phaser.Scene {
 
         // checks if player can complete level when touching door
         if (this.doorSprite) {
+            this.doorCollider = this.physics.add.collider(
+                my.sprite.player,
+                this.doorSprite
+            );
+
+            // complete level when player touches door with key
             this.physics.add.overlap(
                 my.sprite.player,
                 this.doorSprite,
@@ -318,7 +331,7 @@ class Platformer extends Phaser.Scene {
 
     update(time, delta) {
         // stop updating if the player dies or the level completes
-        if(!my.sprite.player || this.levelComplete || this.isDying) return;     
+        if (!my.sprite.player || !my.sprite.player.body || this.levelComplete || this.isDying) return;    
 
         const player = my.sprite.player;
         
@@ -516,26 +529,32 @@ class Platformer extends Phaser.Scene {
 
     collectCoin(player, coin) {
         coin.destroy();
-        this.sound.play("collect");
         this.score += 100;
+        this.sound.play("collect");
         my.vfx.collectBurst.emitParticleAt(coin.x, coin.y, 8);
     }
 
     collectKey(player, key) {
         key.destroy();
         this.hasKey = true;
+        this.sound.play("openDoor");
         my.vfx.collectBurst.emitParticleAt(key.x, key.y, 8);
         this.keyText.setText("Key: ✓").setColor("#ffbb00");
 
-        if(this.doorSprite) {
+        // remove the door blocker
+        if (this.doorCollider) {
+            this.doorCollider.destroy();
+        }
+
+        if (this.doorSprite) {
             this.doorSprite.setAlpha(1);
             this.tweens.add({
-                targets: this.doorSprite,
-                y: this.doorSprite.y - 4,
+                targets:  this.doorSprite,
+                y:        this.doorSprite.y - 4,
                 duration: 500,
-                yoyo: true,
-                repeat: -1,
-                ease: "Sine.easeInOut"
+                yoyo:     true,
+                repeat:   -1,
+                ease:     "Sine.easeInOut"
             });
         }
     }
@@ -544,6 +563,19 @@ class Platformer extends Phaser.Scene {
         this.levelComplete = true;
         this.sound.play("openDoor");
         this.score += 500;
+
+        if (this.currentLevel >= 3) {
+            this.cameras.main.fadeOut(500, 0, 0, 0);
+            this.cameras.main.once("camerafadeoutcomplete", () => {
+                this.scene.start("Platformer", {
+                    level:     "win",
+                    lives:     this.lives,
+                    score:     this.score,
+                    abilities: this.abilities
+                });
+            });
+            return;
+        }
         
         // dims screen for completion text
         this.add.rectangle(
@@ -577,10 +609,11 @@ class Platformer extends Phaser.Scene {
         ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
 
         // next level button
+        const isLastLevel = this.currentLevel >= 3;
         const button = this.add.text(
             this.scale.width / 2,
             this.scale.height / 2 + 60,
-            "[ NEXT LEVEL ]",
+            isLastLevel ? "[ YOU WIN! ]" : "[ NEXT LEVEL ]",
             {
                 fontFamily: "monospace",
                 fontSize:   "32px",
@@ -595,11 +628,12 @@ class Platformer extends Phaser.Scene {
         button.on("pointerdown", () => {
             const nextLevel = this.currentLevel + 1;
 
-            if(nextLevel > 3) {
+            if(isLastLevel) {
                 this.cameras.main.fadeOut(500, 0, 0, 0);
                 this.cameras.main.once("camerafadeoutcomplete", () => {
                     this.showEndScreen();
                 });
+                return;
             }
             else {
                 const abilities = {...this.abilities}   // copy abilities rather than reference
