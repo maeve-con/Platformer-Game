@@ -4,8 +4,8 @@ const DOUBLE_JUMP_VELOCITY = 250;
 const SPRING_VY            = 550;
 const WALL_JUMP_VX         = 100;
 const WALL_JUMP_VY         = 250;
-const CAM_LERP_X           = 0.1;
-const CAM_LERP_Y           = 0.1;
+const CAM_LERP_X           = 0.02;
+const CAM_LERP_Y           = 0.02;
 
 
 class Platformer extends Phaser.Scene {

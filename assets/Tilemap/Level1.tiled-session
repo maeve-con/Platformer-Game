@@ -25,8 +25,8 @@
             "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 323,
-                "y": 447
+                "x": 2318,
+                "y": 450
             }
         },
         "Level1.tmx#tilemap-backgrounds_packed": {
@@ -39,11 +39,11 @@
             "expandedObjectLayers": [
                 2
             ],
-            "scale": 1.5,
-            "selectedLayer": 1,
+            "scale": 1,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 554.6666666666667,
-                "y": 588
+                "x": 779,
+                "y": 197
             }
         },
         "Level2.tmx#tilemap_packed": {
