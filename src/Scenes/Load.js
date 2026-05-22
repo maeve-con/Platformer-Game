@@ -7,6 +7,7 @@ class Load extends Phaser.Scene {
         // Tilemaps
         this.load.setPath("./assets/Tilemap/");
         this.load.tilemapTiledJSON("level-1", "Level1.tmj");
+        this.load.tilemapTiledJSON("level-2", "Level2.tmj");
         this.load.spritesheet("tilemap_packed", "tilemap_packed.png", {
             frameWidth: 18,
             frameHeight: 18

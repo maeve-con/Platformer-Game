@@ -23,6 +23,8 @@ class Platformer extends Phaser.Scene {
         this.isDying       = false;
         this.invulnerable  = false;
         this.walkSoundPlaying = false;
+        this.wallCoyoteTimer = 0;
+        this.lastWallDir = 0;
         this.invulnTimer   = 0;
         this.walkSoundPlaying = false;
 
@@ -271,6 +273,47 @@ class Platformer extends Phaser.Scene {
         //this.cameras.main.fadeIn(500, 0, 0, 0);
         this.cameras.main.startFollow(my.sprite.player, true, CAM_LERP_X, CAM_LERP_Y);
         this.cameras.main.setBounds(0, 0, wolrdW, worldH);
+
+        // show abilities text at level start
+        let abilityMessage = "No special abilities";
+        if (this.abilities.doubleJump && this.abilities.wallJump) {
+            abilityMessage = "Double Jump + Wall Jump";
+        } else if (this.abilities.doubleJump) {
+            abilityMessage = "Double Jump";
+        } else if (this.abilities.wallJump) {
+            abilityMessage = "Wall Jump";
+        }
+
+        const abilityText = this.add.text(
+            this.scale.width / 2,
+            this.scale.height / 2 - 40,
+            `Level ${this.currentLevel}\n${abilityMessage}`,
+            {
+                fontFamily: "monospace",
+                fontSize:   "24px",
+                color:      "#ffffff",
+                stroke:     "#000000",
+                strokeThickness: 4,
+                align:      "center"
+            }
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(99).setAlpha(0);
+
+        // fade in then fade out
+        this.tweens.add({
+            targets:  abilityText,
+            alpha:    1,
+            duration: 500,
+            onComplete: () => {
+                this.time.delayedCall(2000, () => {
+                    this.tweens.add({
+                        targets:  abilityText,
+                        alpha:    0,
+                        duration: 500,
+                        onComplete: () => abilityText.destroy()
+                    });
+                });
+            }
+        });
     }
 
     update(time, delta) {
@@ -356,18 +399,27 @@ class Platformer extends Phaser.Scene {
         // Wall sliding
         let isWallSliding = false;
         let wallDir = 0;
-        if(!onGround && player.canWallJump) {
-            if(goLeft && onWallLeft && body.velocity.y > 0) {
+        if (!onGround && player.canWallJump) {
+            if (goLeft && onWallLeft && body.velocity.y > 0) {
                 isWallSliding = true;
                 wallDir = -1;
+                this.wallCoyoteTimer = 100;
+                this.lastWallDir = -1;
             }
-            if(goRight && onWallRight && body.velocity.y > 0) {
+            if (goRight && onWallRight && body.velocity.y > 0) {
                 isWallSliding = true;
                 wallDir = 1;
+                this.wallCoyoteTimer = 100;
+                this.lastWallDir = 1;
             }
         }
-        if(isWallSliding) {
-            if(body.velocity.y > 50) {
+        // count down wall coyote timer when not on wall
+        if (!isWallSliding) {
+            this.wallCoyoteTimer = Math.max(0, this.wallCoyoteTimer - delta);
+        }
+
+        if (isWallSliding) {
+            if (body.velocity.y > 50) {
                 body.setVelocityY(50);
             }
         }
@@ -380,12 +432,13 @@ class Platformer extends Phaser.Scene {
                 player.coyoteTimer = 0;
                 player.jumpBuffer = 0;
             }
-            else if(isWallSliding && player.canWallJump && !player.wallJumped){
-                // walljump
+            else if ((isWallSliding || this.wallCoyoteTimer > 0) && player.canWallJump && !player.wallJumped) {
                 player.wallJumped = true;
                 player.hasDoubleJumped = false;
-                body.setVelocityX(-wallDir * WALL_JUMP_VX);
+                const dir = isWallSliding ? wallDir : this.lastWallDir;
+                body.setVelocityX(-dir * WALL_JUMP_VX);
                 this.doJump(player, -WALL_JUMP_VY);
+                this.wallCoyoteTimer = 0;
                 player.jumpBuffer = 0;
             }
             else if(player.canDoubleJump && !onGround && !player.hasDoubleJumped && player.coyoteTimer <= 0) {
@@ -550,8 +603,8 @@ class Platformer extends Phaser.Scene {
             }
             else {
                 const abilities = {...this.abilities}   // copy abilities rather than reference
-                if(nextLevel >= 2) abilities.doubleJump = true;
-                if(nextLevel >= 3) abilities.wallJump = true;
+                if(nextLevel >= 2) abilities.wallJump = true;
+                if(nextLevel >= 3) abilities.doubleJump = true;
 
                 this.cameras.main.fadeOut(500, 0, 0, 0);
                 this.cameras.main.once("camerafadeoutcomplete", () => {
@@ -631,6 +684,7 @@ class Platformer extends Phaser.Scene {
         if(this.isDying) return;
         this.isDying = true;
         this.sound.play("death");
+        this.score = 0;
         this.lives--;
 
         this.time.delayedCall(700, () => {
