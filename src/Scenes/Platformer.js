@@ -47,11 +47,6 @@ class Platformer extends Phaser.Scene {
 
         this.spikeLayer = map.createLayer("Spikes", tileset, 0, 0);
 
-        this.physics.add.overlap(
-            my.sprite.player, this.spikeLayer,
-            () => {this.playerDie();}
-        );
-
         let playerStartX = 100;
         let playerStartY = worldH - 100;
 
@@ -132,6 +127,7 @@ class Platformer extends Phaser.Scene {
         my.sprite.player.jumpBuffer      = 0;
 
         // Physics - colliders and overlaps
+        // checks if player touches coins
         this.physics.add.collider(my.sprite.player, this.groundLayer);      // ground collision
         this.physics.add.overlap(
             my.sprite.player,   // obj1
@@ -141,6 +137,7 @@ class Platformer extends Phaser.Scene {
             this                // context - refers to inside collectCoin
         );
 
+        // check if player touches key
         this.physics.add.overlap(
             my.sprite.player,
             my.sprite.keys,
@@ -149,6 +146,7 @@ class Platformer extends Phaser.Scene {
             this
         );
 
+        // checks if player touches springs
         this.physics.add.overlap(
             my.sprite.player,
             my.sprite.springs,
@@ -160,6 +158,13 @@ class Platformer extends Phaser.Scene {
             }
         );
 
+        // check if player touches spikes
+        this.physics.add.overlap(
+            my.sprite.player, this.spikeLayer,
+            () => {this.playerDie();}
+        );
+
+        // checks if player can complete level when touching door
         if (this.doorSprite) {
             this.physics.add.overlap(
                 my.sprite.player,
@@ -369,6 +374,9 @@ class Platformer extends Phaser.Scene {
 
         this.prevOnGround = onGround;   // update character state
         
+        if(player.y > this.physics.world.bounds.height + 50) {
+            this.playerDie();
+        }
     }
 
     // FUNCTIONS 
