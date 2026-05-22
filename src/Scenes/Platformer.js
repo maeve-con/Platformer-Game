@@ -45,18 +45,12 @@ class Platformer extends Phaser.Scene {
         this.ladderLayer = map.createLayer("Ladders", tileset, 0, 0);
         this.groundLayer.setCollisionByProperty({collides: true});
 
-        // ladder check
-        this.physics.add.overlap(
-            my.sprite.player,
-            this.ladderLayer,
-            () => {
-                if(goUp || goDown) {
-                    my.sprite.player.isOnLadder = true;
-                }
-            }
-        );
+        this.spikeLayer = map.createLayer("Spikes", tileset, 0, 0);
 
-        // add ladder layer for functionality
+        this.physics.add.overlap(
+            my.sprite.player, this.spikeLayer,
+            () => {this.playerDie();}
+        );
 
         let playerStartX = 100;
         let playerStartY = worldH - 100;
@@ -115,7 +109,7 @@ class Platformer extends Phaser.Scene {
                         break;
 
                     case "Door":
-                        const spring = my.sprite.springs.create(cx, cy, "tilemap_packed").setFrame(obj.gid - 1).setScale(SCALE);
+                        this.doorSprite = this.physics.add.sprite(cx, cy, "tilemap_packed").setFrame(obj.gid - 1).setScale(SCALE);
                         this.doorSprite.body.allowGravity = false;
                         this.doorSprite.body.moves = false;
                         this.doorSprite.setAlpha(0.4);
@@ -199,6 +193,16 @@ class Platformer extends Phaser.Scene {
             frequency: -1,
         });
 
+        // collect burst
+        my.vfx.collectBurst = this.add.particles(0, 0, "star_01", {
+            speed: { min: 80, max: 200 },
+            angle: { min: 0, max: 360 },
+            scale: { start: 0.2, end: 0 },
+            alpha: { start: 1, end: 0 },
+            lifespan: { min: 300, max: 600 },
+            frequency: -1,
+        });
+
         // Input
         cursors = this.input.keyboard.createCursorKeys();
         this.wasd = this.input.keyboard.addKeys({
@@ -255,6 +259,16 @@ class Platformer extends Phaser.Scene {
         const goUp    = cursors.up.isDown || this.wasd.up.isDown;
         const goDown  = cursors.down.isDown || this.wasd.down.isDown;
         const jumpJustPressed = Phaser.Input.Keyboard.JustDown(cursors.up) || Phaser.Input.Keyboard.JustDown(this.wasd.up);
+
+        // ladder
+        const wasOnLadder = player.isOnLadder;
+        player.isOnLadder = false;
+        if(wasOnLadder && !player.isOnLadder) {
+            player.body.setAllowGravity(true);
+        }
+        this.physics.overlap(player, this.ladderLayer, () => {
+            if (goUp || goDown) player.isOnLadder = true;
+        });
 
         // coyote & jump buffer timers
         if(onGround) {
@@ -343,7 +357,7 @@ class Platformer extends Phaser.Scene {
             }
         }
 
-        if(onGround && Math.abs(body.velocity.x) > 600) {
+        if(onGround && Math.abs(body.velocity.x) > 60) {
             my.vfx.moveTrail.emitParticleAt(player.x, player.y + 10, 1);
         }
 
@@ -354,6 +368,7 @@ class Platformer extends Phaser.Scene {
         this.livesText.setText(`Lives: ${this.lives}`);
 
         this.prevOnGround = onGround;   // update character state
+        
     }
 
     // FUNCTIONS 
@@ -369,7 +384,7 @@ class Platformer extends Phaser.Scene {
         my.vfx.jumpBurst.emitParticleAt(x + 6, y, 5);
     }
     emitDoubleJumpParticles(x, y) {
-        my.vfx.doubleJumpBurst.emitParticleAt(x, y, 15);
+        my.vfx.jumpBurst.emitParticleAt(x, y, 15);
     }
 
     collectCoin(player, coin) {
