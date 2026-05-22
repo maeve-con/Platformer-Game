@@ -23,5 +23,8 @@ let config = {
     scene: [Load, Platformer]   // scenes go here
 }
 
+var cursors;
+const SCALE = 1.0;
+var my = {sprite: {}, text: {}, vfx: {}};
 
 const game = new Phaser.Game(config);
