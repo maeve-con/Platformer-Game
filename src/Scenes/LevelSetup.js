@@ -149,6 +149,11 @@ class LevelSetup {
                     break;
                 }
 
+
+                    
+
+
+
                 case "chaser": {
                     const c = scene.chasers.create(cx, cy, "tilemap_packed")
                         .setFrame(ENEMY_CHASE_FRAME).setScale(SCALE);

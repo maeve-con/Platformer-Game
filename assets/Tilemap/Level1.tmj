@@ -797,17 +797,23 @@
                  "y":666
                 }, 
                 {
-                 "gid":2147483829,
-                 "height":14.2121212121212,
+                 "gid":181,
+                 "height":7.54545454545445,
                  "id":73,
                  "name":"patroller",
                  "opacity":1,
+                 "properties":[
+                        {
+                         "name":"patrolDirection",
+                         "type":"int",
+                         "value":1
+                        }],
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":32.6060606060608,
-                 "x":109.30303030303,
-                 "y":751.212121212121
+                 "width":19.9393939393942,
+                 "x":803.30303030303,
+                 "y":718.962121212121
                 }],
          "opacity":1,
          "type":"objectgroup",

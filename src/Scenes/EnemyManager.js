@@ -37,7 +37,7 @@ class EnemyManager {
             if (enemy.body.blocked.right) enemy.patrolDir = -1;
 
             enemy.body.setVelocityX(PATROL_SPEED * enemy.patrolDir);
-            enemy.setFlipX(enemy.patrolDir < 0);
+            enemy.setFlipX(enemy.patrolDir > 0);
         });
     }
 

@@ -510,6 +510,10 @@
   <object id="66" name="coin" gid="152" x="2088" y="162" width="18" height="18"/>
   <object id="67" name="coin" gid="152" x="2070" y="162" width="18" height="18"/>
   <object id="68" name="coin" gid="152" x="1800" y="666" width="18" height="18"/>
-  <object id="73" name="patroller" gid="2147483829" x="109.303" y="751.212" width="32.6061" height="14.2121"/>
+  <object id="73" name="patroller" gid="181" x="803.303" y="718.962" width="19.9394" height="7.54545">
+   <properties>
+    <property name="patrolDirection" type="int" value="1"/>
+   </properties>
+  </object>
  </objectgroup>
 </map>
