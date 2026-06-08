@@ -22,13 +22,13 @@ class EnemyManager {
     // ── Frame update ──────────────────────────────────────────────────────
 
     update(delta) {
-        this._updatePatrollers();
-        this._updateChasers();
+        this.updatePatrollers();
+        this.updateChasers();
     }
 
     // ── Patrollers ────────────────────────────────────────────────────────
 
-    _updatePatrollers() {
+    updatePatrollers() {
         this.scene.patrollers.getChildren().forEach(enemy => {
             if (!enemy.isAlive || !enemy.body) return;
 
@@ -43,7 +43,7 @@ class EnemyManager {
 
     // ── Chasers ───────────────────────────────────────────────────────────
 
-    _updateChasers() {
+    updateChasers() {
         const player = my.sprite.player;
         if (!player || !player.body) return;
 
@@ -71,12 +71,12 @@ class EnemyManager {
                 }
             } else {
                 // Slow idle patrol while waiting for the player to come close
-                if (enemy.body.blocked.left)  enemy._idleDir = 1;
-                if (enemy.body.blocked.right) enemy._idleDir = -1;
-                if (!enemy._idleDir) enemy._idleDir = 1;
+                if (enemy.body.blocked.left)  enemy.idleDir = 1;
+                if (enemy.body.blocked.right) enemy.idleDir = -1;
+                if (!enemy.idleDir) enemy.idleDir = 1;
 
-                enemy.body.setVelocityX(PATROL_SPEED * 0.5 * enemy._idleDir);
-                enemy.setFlipX(enemy._idleDir < 0);
+                enemy.body.setVelocityX(PATROL_SPEED * 0.5 * enemy.idleDir);
+                enemy.setFlipX(enemy.idleDir < 0);
             }
         });
     }

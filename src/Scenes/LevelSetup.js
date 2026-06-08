@@ -47,7 +47,7 @@ class LevelSetup {
         this.groundLayer.setCollisionByProperty({ collides: true });
 
         // Store the object layer reference so placeObjects() can read it
-        this._objectLayer = map.getObjectLayer("Objects");
+        this.objectLayer = map.getObjectLayer("Objects");
     }
 
     // ── Step 2: Spawn everything from the Tiled object layer ──────────────
@@ -71,9 +71,9 @@ class LevelSetup {
         let playerStartX = 100;
         let playerStartY = this.worldH - 100;
 
-        if (!this._objectLayer) return { playerStartX, playerStartY };
+        if (!this.objectLayer) return { playerStartX, playerStartY };
 
-        this._objectLayer.objects.forEach(obj => {
+        this.objectLayer.objects.forEach(obj => {
             // Tiled gives top-left x and bottom-left y for objects
             const cx = obj.x + obj.width  / 2;
             const cy = obj.y - obj.height / 2;
@@ -83,8 +83,8 @@ class LevelSetup {
                     playerStartX = obj.x;
                     playerStartY = obj.y - 36;
                     // Store for runCameraPan() so it knows where to end the pan
-                    this._spawnX = playerStartX;
-                    this._spawnY = playerStartY;
+                    this.spawnX = playerStartX;
+                    this.spawnY = playerStartY;
                     break;
 
                 case "coin": {
@@ -114,6 +114,8 @@ class LevelSetup {
                         .setFrame(obj.gid - 1).setScale(SCALE);
                     spring.setImmovable(true);
                     spring.refreshBody();
+                    spring.restedFrame   = obj.gid - 1; // frame in rested state
+                    spring.extendedFrame = obj.gid;     // frame in extended state (gid + 1)
                     break;
                 }
 
@@ -125,8 +127,8 @@ class LevelSetup {
                     scene.doorSprite.body.immovable    = true;
                     scene.doorSprite.setAlpha(0.4); // dim until unlocked
                     // Store door position so runCameraPan() can start there
-                    this._doorX = cx;
-                    this._doorY = cy;
+                    this.doorX = cx;
+                    this.doorY = cy;
                     break;
 
                 case "spike": {
@@ -224,6 +226,12 @@ class LevelSetup {
                 p.body.setVelocityY(-SPRING_VY);
                 scene.sound.play("spring");
                 scene.emitJumpParticles(p.x, p.y + 10);
+
+                // Briefly show the extended frame, then revert to rested
+                spring.setFrame(spring.extendedFrame);
+                scene.time.delayedCall(120, () => {
+                    if (spring.active) spring.setFrame(spring.restedFrame);
+                });
             }
         });
 
@@ -358,18 +366,18 @@ class LevelSetup {
         const worldW = this.worldW;
 
         // ── Start at the exit door (fallback: map centre) ─────────────
-        const startX = this._doorX !== undefined ? this._doorX : worldW / 2;
-        const startY = this._doorY !== undefined ? this._doorY : worldH / 2;
+        const startX = this.doorX !== undefined ? this.doorX : worldW / 2;
+        const startY = this.doorY !== undefined ? this.doorY : worldH / 2;
         cam.scrollX  = Phaser.Math.Clamp(startX - cam.width  / 2, 0, worldW - cam.width);
         cam.scrollY  = Phaser.Math.Clamp(startY - cam.height / 2, 0, worldH - cam.height);
 
         // ── End at the player spawn (fallback: player position) ───────
         const endScrollX = Phaser.Math.Clamp(
-            (this._spawnX !== undefined ? this._spawnX : player.x) - cam.width  / 2,
+            (this.spawnX !== undefined ? this.spawnX : player.x) - cam.width  / 2,
             0, worldW - cam.width
         );
         const endScrollY = Phaser.Math.Clamp(
-            (this._spawnY !== undefined ? this._spawnY : player.y) - cam.height / 2,
+            (this.spawnY !== undefined ? this.spawnY : player.y) - cam.height / 2,
             0, worldH - cam.height
         );
 
@@ -414,7 +422,7 @@ class LevelSetup {
 
         // ── Final hand-off helper ─────────────────────────────────────
         // Fades out all cinematic UI, then starts the camera following the player.
-        const _handOffToPlayer = () => {
+        const handOffToPlayer = () => {
             scene.tweens.add({
                 targets:  [topBar, botBar, titleText, subText],
                 alpha:    0,
@@ -481,7 +489,7 @@ class LevelSetup {
                                         duration: 800,
                                         ease:     "Sine.easeInOut",
                                         onComplete: () => {
-                                            scene.time.delayedCall(200, _handOffToPlayer);
+                                            scene.time.delayedCall(200, handOffToPlayer);
                                         }
                                     });
                                 }
@@ -490,7 +498,7 @@ class LevelSetup {
                     });
                 } else {
                     // No boss on this level — hand off directly
-                    _handOffToPlayer();
+                    handOffToPlayer();
                 }
             }
         });

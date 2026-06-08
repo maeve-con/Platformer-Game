@@ -84,8 +84,8 @@ class PlayerController {
         if (player.isOnLadder) {
             body.setAllowGravity(false);
             body.setVelocityY(0);
-            if (goUp)   { body.setVelocityY(-150); this._playLadderSound(); }
-            if (goDown) { body.setVelocityY( 150); this._playLadderSound(); }
+            if (goUp)   { body.setVelocityY(-150); this.playLadderSound(); }
+            if (goDown) { body.setVelocityY( 150); this.playLadderSound(); }
             return; // skip all ground/jump logic while on ladder
         }
 
@@ -145,7 +145,7 @@ class PlayerController {
 
             if (player.coyoteTimer > 0) {
                 // Normal jump (or coyote jump off a ledge)
-                this._doJump(player, -JUMP_VELOCITY);
+                this.doJump(player, -JUMP_VELOCITY);
                 player.coyoteTimer = 0;
                 player.jumpBuffer  = 0;
 
@@ -155,14 +155,14 @@ class PlayerController {
                 player.hasDoubleJumped = false;
                 const dir = isWallSliding ? wallDir : scene.lastWallDir;
                 body.setVelocityX(-dir * WALL_JUMP_VX);
-                this._doJump(player, -WALL_JUMP_VY);
+                this.doJump(player, -WALL_JUMP_VY);
                 scene.wallCoyoteTimer = 0;
                 player.jumpBuffer     = 0;
 
             } else if (player.canDoubleJump && !onGround && !player.hasDoubleJumped && player.coyoteTimer <= 0) {
                 // Double jump
                 player.hasDoubleJumped = true;
-                this._doJump(player, -DOUBLE_JUMP_VELOCITY);
+                this.doJump(player, -DOUBLE_JUMP_VELOCITY);
                 scene.emitDoubleJumpParticles(player.x, player.y);
             }
         }
@@ -172,13 +172,13 @@ class PlayerController {
             body.setVelocityX(-MOVE_SPEED);
             player.setFlipX(true);
             player.anims.play("player-walk", true);
-            if (onGround && !scene.walkSoundPlaying) this._playWalkSound();
+            if (onGround && !scene.walkSoundPlaying) this.playWalkSound();
 
         } else if (goRight) {
             body.setVelocityX(MOVE_SPEED);
             player.setFlipX(false);
             player.anims.play("player-walk", true);
-            if (onGround && !scene.walkSoundPlaying) this._playWalkSound();
+            if (onGround && !scene.walkSoundPlaying) this.playWalkSound();
 
         } else {
             // Decelerate — faster on ground than in air
@@ -208,20 +208,20 @@ class PlayerController {
 
     // ── Private helpers ───────────────────────────────────────────────────
 
-    _doJump(player, vy) {
+    doJump(player, vy) {
         player.body.setVelocityY(vy);
         this.scene.sound.play("jump");
         this.scene.emitJumpParticles(player.x, player.y + 10);
     }
 
-    _playWalkSound() {
+    playWalkSound() {
         const scene = this.scene;
         scene.sound.play("walk", { loop: false });
         scene.walkSoundPlaying = true;
         scene.time.delayedCall(300, () => { scene.walkSoundPlaying = false; });
     }
 
-    _playLadderSound() {
+    playLadderSound() {
         const scene = this.scene;
         if (!scene.ladderSoundPlaying) {
             scene.sound.play("ladder");

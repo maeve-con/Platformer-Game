@@ -21,8 +21,8 @@ class BossManager {
         this.boss  = null;
 
         // HP bar UI references (built in buildHPBar)
-        this._hpFill = null;
-        this._barW   = 260;
+        this.hpFill = null;
+        this.barW   = 260;
     }
 
     // ── Spawn ─────────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@ class BossManager {
     // Call this after spawnBoss() in LevelSetup.
     buildHPBar() {
         const scene = this.scene;
-        const bw = this._barW;
+        const bw = this.barW;
         const bh = 18;
         const bx = scene.scale.width / 2 - bw / 2;
         const by = scene.scale.height - 36;
@@ -69,7 +69,7 @@ class BossManager {
             .setScrollFactor(0).setDepth(99).setOrigin(0.5, 0.5);
 
         // Coloured fill bar (width updated every frame)
-        this._hpFill = scene.add.rectangle(bx, by, bw, bh, 0xff2222)
+        this.hpFill = scene.add.rectangle(bx, by, bw, bh, 0xff2222)
             .setScrollFactor(0).setDepth(100).setOrigin(0, 0.5);
 
         // Label above the bar
@@ -78,12 +78,12 @@ class BossManager {
         }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
     }
 
-    _refreshHPBar() {
-        if (!this._hpFill) return;
+    refreshHPBar() {
+        if (!this.hpFill) return;
         const pct = Math.max(0, this.boss.hp / BOSS_MAX_HP);
-        this._hpFill.setDisplaySize(this._barW * pct, 18);
+        this.hpFill.setDisplaySize(this.barW * pct, 18);
         // Colour shifts to orange in phase 2 to signal danger
-        this._hpFill.setFillStyle(this.boss.phase === 2 ? 0xff8800 : 0xff2222);
+        this.hpFill.setFillStyle(this.boss.phase === 2 ? 0xff8800 : 0xff2222);
     }
 
     // ── Update ────────────────────────────────────────────────────────────
@@ -93,24 +93,24 @@ class BossManager {
         const boss = this.boss;
         if (!boss || !boss.body || !boss.isAlive) return;
 
-        this._checkPhaseTransition();
-        this._moveBoss();
-        this._handleFiring(delta);
-        this._refreshHPBar();
+        this.checkPhaseTransition();
+        this.moveBoss();
+        this.handleFiring(delta);
+        this.refreshHPBar();
     }
 
-    _checkPhaseTransition() {
+    checkPhaseTransition() {
         const boss  = this.boss;
         const scene = this.scene;
 
         if (boss.hp <= BOSS_MAX_HP / 2 && boss.phase === 1) {
             boss.phase = 2;
-            this._emitPhaseChangeBurst(boss.x, boss.y);
+            this.emitPhaseChangeBurst(boss.x, boss.y);
             scene.cameras.main.shake(400, 0.012);
         }
     }
 
-    _moveBoss() {
+    moveBoss() {
         const boss  = this.boss;
         const scene = this.scene;
 
@@ -136,7 +136,7 @@ class BossManager {
         boss.setFlipX(boss.dir < 0);
     }
 
-    _handleFiring(delta) {
+    handleFiring(delta) {
         const boss   = this.boss;
         const player = my.sprite.player;
         if (!player || !player.body) return;
@@ -146,17 +146,17 @@ class BossManager {
 
         if (boss.fireTimer <= 0) {
             boss.fireTimer = fireRate;
-            this._fireProjectile(boss.x, boss.y, player.x, player.y);
+            this.fireProjectile(boss.x, boss.y, player.x, player.y);
         }
     }
 
-    _fireProjectile(bx, by, tx, ty) {
+    fireProjectile(bx, by, tx, ty) {
         const scene  = this.scene;
         const angle  = Phaser.Math.Angle.Between(bx, by, tx, ty);
         const speed  = this.boss.phase === 2 ? 220 : 160;
         const group  = scene.bossProjectiles;
 
-        const _spawnProj = (a) => {
+        const spawnProj = (a) => {
             const proj = group.create(bx, by, "tilemap_packed")
                 .setFrame(BOSS_PROJECTILE_FRAME).setScale(SCALE);
             proj.body.allowGravity = false;
@@ -165,12 +165,12 @@ class BossManager {
             scene.time.delayedCall(3000, () => { if (proj.active) proj.destroy(); });
         };
 
-        _spawnProj(angle);
+        spawnProj(angle);
 
         // Phase 2: 3-shot spread
         if (this.boss.phase === 2) {
-            _spawnProj(angle - 0.25);
-            _spawnProj(angle + 0.25);
+            spawnProj(angle - 0.25);
+            spawnProj(angle + 0.25);
         }
     }
 
@@ -205,18 +205,18 @@ class BossManager {
         boss.setTint(0xffffff);
         scene.time.delayedCall(120, () => { if (boss.active) boss.clearTint(); });
 
-        this._refreshHPBar();
+        this.refreshHPBar();
 
-        if (boss.hp <= 0) this._killBoss();
+        if (boss.hp <= 0) this.killBoss();
     }
 
-    _killBoss() {
+    killBoss() {
         const boss  = this.boss;
         const scene = this.scene;
 
         boss.isAlive = false;
         scene.cameras.main.shake(600, 0.02);
-        this._emitPhaseChangeBurst(boss.x, boss.y); // big death explosion
+        this.emitPhaseChangeBurst(boss.x, boss.y); // big death explosion
         scene.sound.play("death");
         scene.score += 1000;
 
@@ -240,7 +240,7 @@ class BossManager {
     // ── Particle helpers ──────────────────────────────────────────────────
 
     // Staggered multi-burst used for phase change and death.
-    _emitPhaseChangeBurst(x, y) {
+    emitPhaseChangeBurst(x, y) {
         for (let i = 0; i < 4; i++) {
             this.scene.time.delayedCall(i * 80, () => {
                 my.vfx.bossHit.emitParticleAt(
