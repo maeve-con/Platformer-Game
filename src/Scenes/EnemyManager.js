@@ -81,6 +81,12 @@ class EnemyManager {
         });
     }
 
+    
+
+
+
+
+
     // ── Contact callbacks (registered in LevelSetup) ──────────────────────
 
     // Called by physics overlap when the player touches a patroller or chaser.

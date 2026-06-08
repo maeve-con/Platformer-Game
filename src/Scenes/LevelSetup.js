@@ -140,7 +140,7 @@ class LevelSetup {
                 }
 
                 case "patroller": {
-                    const p = scene.patrollers.create(cx, cy, "tilemap_packed")
+                    const p = scene.patrollers.create(cx, cy, "patroller")
                         .setFrame(ENEMY_PATROL_FRAME).setScale(SCALE);
                     p.setCollideWorldBounds(true);
                     p.setBounce(0);

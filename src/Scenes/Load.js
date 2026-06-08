@@ -19,6 +19,11 @@ class Load extends Phaser.Scene {
         this.load.image("char-idle", "tile_0045.png");
         this.load.image("char-walk", "tile_0046.png");
 
+        // Enemy sprites
+        this.load.setPath("./assets/Enemies/");
+        this.load.image("patroller", "bat_fly.png");
+        //this.load.image("chaser", "chaser.png");
+
         // Particles 
         this.load.setPath("./assets/Particles/");
         this.load.image("dirt_01", "dirt_01.png");
