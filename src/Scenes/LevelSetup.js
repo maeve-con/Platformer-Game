@@ -82,6 +82,9 @@ class LevelSetup {
                 case "PlayerStart":
                     playerStartX = obj.x;
                     playerStartY = obj.y - 36;
+                    // Store for runCameraPan() so it knows where to end the pan
+                    this._spawnX = playerStartX;
+                    this._spawnY = playerStartY;
                     break;
 
                 case "coin": {
@@ -121,6 +124,9 @@ class LevelSetup {
                     scene.doorSprite.body.moves        = false;
                     scene.doorSprite.body.immovable    = true;
                     scene.doorSprite.setAlpha(0.4); // dim until unlocked
+                    // Store door position so runCameraPan() can start there
+                    this._doorX = cx;
+                    this._doorY = cy;
                     break;
 
                 case "spike": {
@@ -282,8 +288,9 @@ class LevelSetup {
             frequency: -1,
         });
 
-        // Coin / key collect burst
-        my.vfx.collectBurst = scene.add.particles(0, 0, "star_08", {
+        // Coin / key collect burst — cycles through multiple tilemap frames for variety
+        my.vfx.collectBurst = scene.add.particles(0, 0, "tilemap_packed", {
+            frame:    [ENEMY_PATROL_FRAME, ENEMY_CHASE_FRAME, BOSS_PROJECTILE_FRAME],
             speed:    { min: 100, max: 240 },
             angle:    { min: 0,   max: 360 },
             scale:    { start: 0.10, end: 0 },
@@ -302,8 +309,9 @@ class LevelSetup {
             frequency: -1,
         });
 
-        // Boss hit and phase-change burst
-        my.vfx.bossHit = scene.add.particles(0, 0, "star_08", {
+        // Boss hit and phase-change burst — multi-frame for extra visual punch
+        my.vfx.bossHit = scene.add.particles(0, 0, "tilemap_packed", {
+            frame:    [BOSS_FRAME, ENEMY_PATROL_FRAME, BOSS_PROJECTILE_FRAME],
             speed:    { min: 120, max: 280 },
             angle:    { min: 0,   max: 360 },
             scale:    { start: 0.15, end: 0 },
@@ -340,20 +348,33 @@ class LevelSetup {
 
     // ── Step 7: Cinematic camera pan ──────────────────────────────────────
 
-    // Pans the camera from the top of the map to the bottom, shows the level
-    // title, then hands control back to the player (sets scene.cameraReady).
+    // Pans the camera from the exit door to the player spawn point, shows the
+    // level title, then hands control to the player (sets scene.cameraReady).
+    // On level 3, also swoops to the boss for a dramatic intro before handing off.
     runCameraPan(player) {
         const scene  = this.scene;
         const cam    = scene.cameras.main;
         const worldH = this.worldH;
         const worldW = this.worldW;
 
-        // Start camera at the top, centred horizontally
-        cam.scrollY = 0;
-        cam.scrollX = worldW / 2 - cam.width / 2;
+        // ── Start at the exit door (fallback: map centre) ─────────────
+        const startX = this._doorX !== undefined ? this._doorX : worldW / 2;
+        const startY = this._doorY !== undefined ? this._doorY : worldH / 2;
+        cam.scrollX  = Phaser.Math.Clamp(startX - cam.width  / 2, 0, worldW - cam.width);
+        cam.scrollY  = Phaser.Math.Clamp(startY - cam.height / 2, 0, worldH - cam.height);
+
+        // ── End at the player spawn (fallback: player position) ───────
+        const endScrollX = Phaser.Math.Clamp(
+            (this._spawnX !== undefined ? this._spawnX : player.x) - cam.width  / 2,
+            0, worldW - cam.width
+        );
+        const endScrollY = Phaser.Math.Clamp(
+            (this._spawnY !== undefined ? this._spawnY : player.y) - cam.height / 2,
+            0, worldH - cam.height
+        );
 
         // ── Cinematic black bars ──────────────────────────────────────
-        const barH  = 60;
+        const barH   = 60;
         const topBar = scene.add.rectangle(
             scene.scale.width / 2, barH / 2,
             scene.scale.width, barH, 0x000000
@@ -391,28 +412,86 @@ class LevelSetup {
             duration: 400, delay: 200
         });
 
-        // Pan top → bottom over 2 seconds
+        // ── Final hand-off helper ─────────────────────────────────────
+        // Fades out all cinematic UI, then starts the camera following the player.
+        const _handOffToPlayer = () => {
+            scene.tweens.add({
+                targets:  [topBar, botBar, titleText, subText],
+                alpha:    0,
+                duration: 400,
+                onComplete: () => {
+                    topBar.destroy();
+                    botBar.destroy();
+                    titleText.destroy();
+                    subText.destroy();
+
+                    cam.startFollow(player, true, CAM_LERP_X, CAM_LERP_Y);
+                    scene.cameraReady = true; // unlock player input
+                }
+            });
+        };
+
+        // ── Pan: door → player spawn ──────────────────────────────────
+        // Linger on the door for 1.2 s so the player can see the goal,
+        // then sweep across to the spawn point.
         scene.tweens.add({
             targets:  cam,
-            scrollY:  worldH - cam.height,
-            duration: 2000,
+            scrollX:  endScrollX,
+            scrollY:  endScrollY,
+            delay:    1200,
+            duration: 2500,
             ease:     "Sine.easeInOut",
             onComplete: () => {
-                // Fade out bars and title, then start following the player
-                scene.tweens.add({
-                    targets:  [topBar, botBar, titleText, subText],
-                    alpha:    0,
-                    duration: 400,
-                    onComplete: () => {
-                        topBar.destroy();
-                        botBar.destroy();
-                        titleText.destroy();
-                        subText.destroy();
+                // ── Boss intro pan (level 3 only) ─────────────────────
+                const boss = this.bossManager.boss;
+                if (boss) {
+                    // Fade out the level title while we swoop toward the boss
+                    scene.tweens.add({ targets: [titleText, subText], alpha: 0, duration: 300 });
 
-                        cam.startFollow(player, true, CAM_LERP_X, CAM_LERP_Y);
-                        scene.cameraReady = true; // unlock player input
-                    }
-                });
+                    // "WARNING" label that flashes during the boss reveal
+                    const warnText = scene.add.text(
+                        scene.scale.width / 2, scene.scale.height / 2,
+                        "⚠  BOSS APPROACHING  ⚠",
+                        { fontFamily: "monospace", fontSize: "28px", color: "#ff4444",
+                          stroke: "#000000", strokeThickness: 4 }
+                    ).setOrigin(0.5).setScrollFactor(0).setDepth(201).setAlpha(0);
+
+                    // Pan the camera to the boss position
+                    scene.tweens.add({
+                        targets:  cam,
+                        scrollX:  Phaser.Math.Clamp(boss.x - cam.width  / 2, 0, worldW - cam.width),
+                        scrollY:  Phaser.Math.Clamp(boss.y - cam.height / 2, 0, worldH - cam.height),
+                        duration: 1000,
+                        ease:     "Sine.easeInOut",
+                        onComplete: () => {
+                            // Flash the warning text 3 times while held on the boss
+                            scene.tweens.add({
+                                targets:   warnText,
+                                alpha:     1,
+                                duration:  200,
+                                yoyo:      true,
+                                repeat:    3,
+                                onComplete: () => {
+                                    warnText.destroy();
+                                    // Brief pause, then pan back to spawn and hand off
+                                    scene.tweens.add({
+                                        targets:  cam,
+                                        scrollX:  endScrollX,
+                                        scrollY:  endScrollY,
+                                        duration: 800,
+                                        ease:     "Sine.easeInOut",
+                                        onComplete: () => {
+                                            scene.time.delayedCall(200, _handOffToPlayer);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                } else {
+                    // No boss on this level — hand off directly
+                    _handOffToPlayer();
+                }
             }
         });
     }
