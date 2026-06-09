@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="150" height="50" tilewidth="18" tileheight="18" infinite="0" nextlayerid="13" nextobjectid="85">
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="150" height="50" tilewidth="18" tileheight="18" infinite="0" nextlayerid="13" nextobjectid="86">
  <editorsettings>
   <export target="Level1.tmj" format="json"/>
  </editorsettings>
@@ -526,5 +526,10 @@
   <object id="82" name="ladder" gid="72" x="2664" y="72" width="18" height="18"/>
   <object id="83" name="ladder" gid="72" x="2664" y="36" width="18" height="18"/>
   <object id="84" name="ladder" gid="72" x="2664" y="18" width="18" height="18"/>
+  <object id="85" name="patroller" gid="181" x="605.364" y="636.227" width="19.9394" height="7.54545">
+   <properties>
+    <property name="patrolDirection" type="int" value="1"/>
+   </properties>
+  </object>
  </objectgroup>
 </map>

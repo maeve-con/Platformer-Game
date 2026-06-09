@@ -230,11 +230,10 @@ class Platformer extends Phaser.Scene {
                 player.body.setVelocityY(0);
                 player.body.setAllowGravity(true);
             }
-            // Reset zoom, keep screen black, then show UI on top
+            // Reset zoom, clear the fade, then show UI over solid black backdrop
             cam.setZoom(1);
-            cam.fadeOut(0, 0, 0, 0); // snap to black instantly so fadeIn starts from black
+            cam.resetFX();
             this.showLevelComplete();
-            cam.fadeIn(600, 0, 0, 0);
         });
     }
 
@@ -251,27 +250,27 @@ class Platformer extends Phaser.Scene {
             return;
         }
 
-        // Overlay: dim the screen and show completion UI
+        // Pure black backdrop at depth 500 so it covers everything including HUD
         this.add.rectangle(
             this.scale.width / 2, this.scale.height / 2,
-            this.scale.width, this.scale.height, 0x000000, 0.65
-        ).setScrollFactor(0).setDepth(100);
+            this.scale.width, this.scale.height, 0x000000, 1
+        ).setScrollFactor(0).setDepth(500);
 
         this.add.text(this.scale.width / 2, this.scale.height / 2 - 60,
             "LEVEL COMPLETE!",
             { fontFamily: "monospace", fontSize: "48px", color: "#f1c40f" }
-        ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(501);
 
         this.add.text(this.scale.width / 2, this.scale.height / 2,
             `Score: ${this.score}`,
             { fontFamily: "monospace", fontSize: "28px", color: "#f1c40f" }
-        ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(501);
 
         const button = this.add.text(
             this.scale.width / 2, this.scale.height / 2 + 60,
             "[ NEXT LEVEL ]",
             { fontFamily: "monospace", fontSize: "32px", color: "#f1c40f" }
-        ).setOrigin(0.5).setScrollFactor(0).setDepth(100).setInteractive();
+        ).setOrigin(0.5).setScrollFactor(0).setDepth(501).setInteractive();
 
         button.on("pointerover", () => button.setColor("#ffffff"));
         button.on("pointerout",  () => button.setColor("#62dd99"));

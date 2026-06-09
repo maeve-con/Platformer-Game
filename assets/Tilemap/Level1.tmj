@@ -957,6 +957,25 @@
                  "width":18,
                  "x":2664,
                  "y":18
+                }, 
+                {
+                 "gid":181,
+                 "height":7.54545,
+                 "id":85,
+                 "name":"patroller",
+                 "opacity":1,
+                 "properties":[
+                        {
+                         "name":"patrolDirection",
+                         "type":"int",
+                         "value":1
+                        }],
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":19.9394,
+                 "x":605.363633333333,
+                 "y":636.227275
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -965,7 +984,7 @@
          "y":0
         }],
  "nextlayerid":13,
- "nextobjectid":85,
+ "nextobjectid":86,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.1",

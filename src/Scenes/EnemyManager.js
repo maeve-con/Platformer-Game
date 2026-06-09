@@ -29,12 +29,37 @@ class EnemyManager {
     // ── Patrollers ────────────────────────────────────────────────────────
 
     updatePatrollers() {
+        const groundLayer = this.scene.levelSetup.groundLayer;
+
         this.scene.patrollers.getChildren().forEach(enemy => {
             if (!enemy.isAlive || !enemy.body) return;
+
+            // Tick down the edge-pause timer
+            if (enemy.pauseTimer > 0) {
+                enemy.pauseTimer -= this.scene.game.loop.delta;
+                enemy.body.setVelocityX(0);
+                return;
+            }
 
             // Reverse when hitting a wall (physics body reports it)
             if (enemy.body.blocked.left)  enemy.patrolDir =  1;
             if (enemy.body.blocked.right) enemy.patrolDir = -1;
+
+            // Edge detection: probe one tile ahead and one tile below foot level.
+            // If there is no solid ground there, pause briefly and reverse.
+            if (enemy.body.blocked.down && groundLayer) {
+                const probeX = enemy.x + enemy.patrolDir * (enemy.body.halfWidth + 6);
+                const probeY = enemy.body.bottom + 8; // just below the feet
+                const tile   = groundLayer.getTileAtWorldXY(probeX, probeY);
+                const noGround = !tile || !tile.properties || !tile.properties.collides;
+
+                if (noGround) {
+                    enemy.patrolDir  = -enemy.patrolDir;
+                    enemy.pauseTimer = 350; // ms to pause at the edge
+                    enemy.body.setVelocityX(0);
+                    return;
+                }
+            }
 
             enemy.body.setVelocityX(PATROL_SPEED * enemy.patrolDir);
             enemy.setFlipX(enemy.patrolDir > 0);

@@ -80,6 +80,19 @@
                  "width":51,
                  "x":433.5,
                  "y":500.5
+                }, 
+                {
+                 "gid":158,
+                 "height":18,
+                 "id":3,
+                 "name":"PlayerStart",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":18,
+                 "x":450,
+                 "y":702
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -88,7 +101,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":3,
+ "nextobjectid":4,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.1",

@@ -154,22 +154,18 @@ class LevelSetup {
 
                 case "patroller": {
                     const p = scene.patrollers.create(cx, cy, "patroller")
-                        .setFrame(ENEMY_PATROL_FRAME).setScale(SCALE);
+                        .setFrame(ENEMY_PATROL_FRAME).setScale(SCALE / 1.5);
                     p.setCollideWorldBounds(true);
                     p.setBounce(0);
-                    p.patrolDir = 1;
-                    p.isAlive   = true;
+                    p.patrolDir  = 1;
+                    p.pauseTimer = 0;
+                    p.isAlive    = true;
                     break;
                 }
 
-
-                    
-
-
-
                 case "chaser": {
                     const c = scene.chasers.create(cx, cy, "tilemap_packed")
-                        .setFrame(ENEMY_CHASE_FRAME).setScale(SCALE);
+                        .setFrame(ENEMY_CHASE_FRAME).setScale(SCALE / 1.5);
                     c.setCollideWorldBounds(true);
                     c.isAlive   = true;
                     c.chasing   = false;
