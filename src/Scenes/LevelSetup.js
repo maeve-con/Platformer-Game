@@ -121,7 +121,7 @@ class LevelSetup {
 
                 case "patroller": {
                     const p = scene.patrollers.create(cx, cy, "patroller")
-                        .setFrame(ENEMY_PATROL_FRAME).setScale(SCALE / 1.5);
+                        .setScale(SCALE / 1.5);
                     p.setCollideWorldBounds(true);
                     p.setBounce(0);
                     p.patrolDir  = 1;
@@ -306,6 +306,13 @@ class LevelSetup {
         const cam    = scene.cameras.main;
         const worldW = this.worldW;
         const worldH = this.worldH;
+
+        // Boss level — skip the cinematic entirely and jump straight to gameplay.
+        if (scene.currentLevel === 4 && !scene.skipPan) {
+            cam.startFollow(player, true, CAM_LERP_X, CAM_LERP_Y);
+            scene.cameraReady = true;
+            return;
+        }
 
         // On respawn, pan from the death location to the spawn point instead of
         // running the full level-intro cinematic.
