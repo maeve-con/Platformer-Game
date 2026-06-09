@@ -252,8 +252,7 @@ class LevelSetup {
             frequency: -1,
         });
 
-        my.vfx.collectBurst = scene.add.particles(0, 0, "tilemap_packed", {
-            frame:    [ENEMY_PATROL_FRAME, ENEMY_CHASE_FRAME, BOSS_PROJECTILE_FRAME],
+        my.vfx.collectBurst = scene.add.particles(0, 0, "star_08", {
             speed:    { min: 100, max: 240 },
             angle:    { min: 0,   max: 360 },
             scale:    { start: 0.10, end: 0 },
@@ -271,8 +270,7 @@ class LevelSetup {
             frequency: -1,
         });
 
-        my.vfx.bossHit = scene.add.particles(0, 0, "tilemap_packed", {
-            frame:    [BOSS_FRAME, ENEMY_PATROL_FRAME, BOSS_PROJECTILE_FRAME],
+        my.vfx.bossHit = scene.add.particles(0, 0, "star_08", {
             speed:    { min: 120, max: 280 },
             angle:    { min: 0,   max: 360 },
             scale:    { start: 0.15, end: 0 },

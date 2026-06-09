@@ -193,7 +193,7 @@ class Platformer extends Phaser.Scene {
     }
 
     showLevelComplete() {
-        if (this.currentLevel >= 3) {
+        if (this.currentLevel >= 4) {
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once("camerafadeoutcomplete", () => {
                 this.scene.start("Platformer", {
