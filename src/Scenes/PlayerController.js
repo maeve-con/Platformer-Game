@@ -1,24 +1,8 @@
-// ============================================================
-//  PlayerController.js
-//  Handles everything the player does each frame:
-//    - reading input
-//    - ladder climbing
-//    - coyote time & jump buffering
-//    - wall sliding & wall jumping
-//    - normal / double jumping
-//    - horizontal movement & animations
-//    - invulnerability flicker
-//    - fall-death detection
-// ============================================================
-
 class PlayerController {
-    // scene  — the Platformer scene this controller lives inside
     constructor(scene) {
         this.scene = scene;
     }
 
-    // Called once in Platformer.create() after the player sprite exists.
-    // Sets up keyboard input and resets per-frame tracking state.
     init() {
         const scene = this.scene;
 
@@ -30,22 +14,19 @@ class PlayerController {
             right: Phaser.Input.Keyboard.KeyCodes.D
         });
 
-        scene.prevOnGround   = true;
+        scene.prevOnGround    = true;
         scene.wallCoyoteTimer = 0;
-        scene.lastWallDir    = 0;
+        scene.lastWallDir     = 0;
     }
 
-    // Called every frame from Platformer.update().
-    // delta — ms since last frame
     update(delta) {
         const scene  = this.scene;
         const player = my.sprite.player;
         if (!player || !player.body) return;
 
-        // ── Invulnerability flicker ───────────────────────────────────
+        // Flicker the sprite to signal the spawn invulnerability window.
         if (player.invulnerable) {
             player.invulnTimer -= delta;
-            // Alternate between full and dim alpha to signal invulnerability
             player.setAlpha(Math.floor(player.invulnTimer / 80) % 2 === 0 ? 1 : 0.3);
             if (player.invulnTimer <= 0) {
                 player.invulnerable = false;
@@ -53,8 +34,7 @@ class PlayerController {
             }
         }
 
-        // ── Read input ────────────────────────────────────────────────
-        const wasd   = scene.wasd;
+        const wasd  = scene.wasd;
         const goLeft  = cursors.left.isDown  || wasd.left.isDown;
         const goRight = cursors.right.isDown || wasd.right.isDown;
         const goUp    = cursors.up.isDown    || wasd.up.isDown || cursors.space.isDown;
@@ -64,17 +44,15 @@ class PlayerController {
             Phaser.Input.Keyboard.JustDown(cursors.up)    ||
             Phaser.Input.Keyboard.JustDown(wasd.up);
 
-        // ── Physics state shortcuts ───────────────────────────────────
         const body        = player.body;
         const onGround    = body.blocked.down;
         const onWallLeft  = body.blocked.left;
         const onWallRight = body.blocked.right;
 
-        // ── Ladder ────────────────────────────────────────────────────
+        // Ladder
         const wasOnLadder = player.isOnLadder;
         player.isOnLadder = false;
 
-        // Re-enable gravity the moment we step off a ladder
         if (wasOnLadder && !player.isOnLadder) body.setAllowGravity(true);
 
         scene.physics.overlap(player, my.sprite.ladders, () => {
@@ -86,11 +64,10 @@ class PlayerController {
             body.setVelocityY(0);
             if (goUp)   { body.setVelocityY(-150); this.playLadderSound(); }
             if (goDown) { body.setVelocityY( 150); this.playLadderSound(); }
-            return; // skip all ground/jump logic while on ladder
+            return;
         }
 
-        // ── Coyote time ───────────────────────────────────────────────
-        // Lets the player jump a few ms after walking off a ledge.
+        // Coyote time
         if (onGround) {
             player.coyoteTimer    = 80;
             player.hasDoubleJumped = false;
@@ -99,22 +76,21 @@ class PlayerController {
             player.coyoteTimer = Math.max(0, player.coyoteTimer - delta);
         }
 
-        // ── Jump buffer ───────────────────────────────────────────────
-        // Lets the player press jump slightly before landing and still jump.
+        // Jump buffer
+        // Lets the player press jump slightly before landing and still get it.
         if (jumpJustPressed) {
             player.jumpBuffer = 120;
         } else {
             player.jumpBuffer = Math.max(0, player.jumpBuffer - delta);
         }
 
-        // ── Land event ────────────────────────────────────────────────
         const justLanded = !scene.prevOnGround && onGround;
         if (justLanded) {
             scene.sound.play("land");
             scene.emitLandParticles(player.x, player.y + 10);
         }
 
-        // ── Wall sliding ──────────────────────────────────────────────
+        // Wall sliding
         let isWallSliding = false;
         let wallDir = 0;
 
@@ -137,20 +113,17 @@ class PlayerController {
             scene.wallCoyoteTimer = Math.max(0, scene.wallCoyoteTimer - delta);
         }
 
-        // Slow descent while clinging to a wall
+        // Slow descent while clinging to a wall.
         if (isWallSliding && body.velocity.y > 50) body.setVelocityY(50);
 
-        // ── Jump resolution ───────────────────────────────────────────
+        // Jump resolution
         if (player.jumpBuffer > 0) {
-
             if (player.coyoteTimer > 0) {
-                // Normal jump (or coyote jump off a ledge)
                 this.doJump(player, -JUMP_VELOCITY);
                 player.coyoteTimer = 0;
                 player.jumpBuffer  = 0;
 
             } else if ((isWallSliding || scene.wallCoyoteTimer > 0) && player.canWallJump && !player.wallJumped) {
-                // Wall jump — kick horizontally away from the wall
                 player.wallJumped      = true;
                 player.hasDoubleJumped = false;
                 const dir = isWallSliding ? wallDir : scene.lastWallDir;
@@ -160,14 +133,13 @@ class PlayerController {
                 player.jumpBuffer     = 0;
 
             } else if (player.canDoubleJump && !onGround && !player.hasDoubleJumped && player.coyoteTimer <= 0) {
-                // Double jump
                 player.hasDoubleJumped = true;
                 this.doJump(player, -DOUBLE_JUMP_VELOCITY);
                 scene.emitDoubleJumpParticles(player.x, player.y);
             }
         }
 
-        // ── Horizontal movement ───────────────────────────────────────
+        // Horizontal movement
         if (goLeft) {
             body.setVelocityX(-MOVE_SPEED);
             player.setFlipX(true);
@@ -181,32 +153,27 @@ class PlayerController {
             if (onGround && !scene.walkSoundPlaying) this.playWalkSound();
 
         } else {
-            // Decelerate — faster on ground than in air
+            // Faster deceleration on ground than in air.
             body.setVelocityX(body.velocity.x * (onGround ? 0.75 : 0.9));
             if (Math.abs(body.velocity.x) < 5) body.setVelocityX(0);
             if (onGround) player.anims.play("player-idle", true);
         }
 
-        // Running dust trail
         if (onGround && Math.abs(body.velocity.x) > 60) {
             my.vfx.moveTrail.emitParticleAt(player.x, player.y + 10, 2);
         }
 
         if (!onGround) player.anims.play("player-jump", true);
 
-        // ── HUD refresh ───────────────────────────────────────────────
         scene.scoreText.setText(`Score: ${scene.score}`);
         scene.livesText.setText(`Lives: ${scene.lives}`);
 
         scene.prevOnGround = onGround;
 
-        // ── Fall out of world ─────────────────────────────────────────
         if (player.y > scene.physics.world.bounds.height + 50) {
             scene.playerDie();
         }
     }
-
-    // ── Private helpers ───────────────────────────────────────────────────
 
     doJump(player, vy) {
         player.body.setVelocityY(vy);

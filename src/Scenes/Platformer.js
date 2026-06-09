@@ -1,33 +1,8 @@
-// ============================================================
-//  Platformer.js  —  Main scene (scene shell only)
-//
-//  This file is intentionally thin. All heavy lifting is
-//  delegated to dedicated helper classes:
-//
-//    LevelSetup       — map, objects, colliders, HUD, cam pan
-//    PlayerController — input, movement, jumping, ladder
-//    EnemyManager     — patroller + chaser AI
-//    BossManager      — boss AI, phases, projectiles, HP bar
-//
-//  Load order in index.html (each as a <script> tag):
-//    1. constants.js
-//    2. PlayerController.js
-//    3. EnemyManager.js
-//    4. BossManager.js
-//    5. LevelSetup.js
-//    6. Platformer.js   <- this file
-//    7. Load.js
-//    8. main.js
-// ============================================================
-
 class Platformer extends Phaser.Scene {
     constructor() {
         super("Platformer");
     }
 
-    // ── Init ──────────────────────────────────────────────────────────────
-    // Runs before create(). Resets all per-level state so restarting the
-    // scene with new data always starts clean.
     init(data) {
         this.currentLevel       = data.level || 1;
         this.lives              = data.lives !== undefined ? data.lives : 3;
@@ -40,31 +15,27 @@ class Platformer extends Phaser.Scene {
         this.ladderSoundPlaying = false;
         this.wallCoyoteTimer    = 0;
         this.lastWallDir        = 0;
-        this.cameraReady        = false; // unlocked after the intro pan finishes
+        this.cameraReady        = false;
         this.doorSprite         = null;
         this.doorCollider       = null;
 
         this.abilities = data.abilities || { doubleJump: false, wallJump: false };
-        this.skipPan   = data.skipPan  || false;
+        this.skipPan   = data.skipPan   || false;
         this.deathCamX = data.deathCamX !== undefined ? data.deathCamX : null;
         this.deathCamY = data.deathCamY !== undefined ? data.deathCamY : null;
     }
 
-    // ── Create ────────────────────────────────────────────────────────────
     create() {
-        // Win screen is handled as a special "level" value
         if (this.currentLevel === "win") {
             this.showEndScreen();
             return;
         }
 
-        // Instantiate all helper systems
         this.enemyManager  = new EnemyManager(this);
         this.bossManager   = new BossManager(this);
         this.levelSetup    = new LevelSetup(this, this.enemyManager, this.bossManager);
         this.playerCtrl    = new PlayerController(this);
 
-        // Build the level in order — each step depends on the previous
         this.levelSetup.buildWorld();
         const { playerStartX, playerStartY } = this.levelSetup.placeObjects();
         const player = this.levelSetup.spawnPlayer(playerStartX, playerStartY);
@@ -77,43 +48,36 @@ class Platformer extends Phaser.Scene {
 
         this.prevOnGround = true;
 
-        // Kick off the cinematic intro pan (sets cameraReady when done)
         this.levelSetup.runCameraPan(player);
     }
 
-    // ── Update ────────────────────────────────────────────────────────────
     update(time, delta) {
         if (!my.sprite.player || !my.sprite.player.body) return;
         if (this.levelComplete || this.isDying) return;
 
-        // Always tick enemies (they move during the camera pan too)
         this.enemyManager.update(delta);
         if (this.bossManager.boss && this.bossManager.boss.isAlive) {
             this.bossManager.update(delta);
         }
 
-        // Player input is locked until the intro pan completes
         if (!this.cameraReady) return;
 
         this.playerCtrl.update(delta);
     }
 
-    // ── Particle helpers (called by PlayerController and managers) ─────────
-
+    // Particle helpers
     emitJumpParticles(x, y) {
         my.vfx.jumpBurst.emitParticleAt(x - 8, y, 6);
         my.vfx.jumpBurst.emitParticleAt(x + 8, y, 6);
     }
 
     emitLandParticles(x, y) {
-        // Wider, lower burst to distinguish landing from jumping
         my.vfx.moveTrail.emitParticleAt(x - 12, y, 4);
         my.vfx.moveTrail.emitParticleAt(x + 12, y, 4);
     }
 
     emitDoubleJumpParticles(x, y) {
         my.vfx.jumpBurst.emitParticleAt(x, y, 14);
-        // Staggered ring for extra pop
         for (let i = 0; i < 3; i++) {
             this.time.delayedCall(i * 40, () => {
                 my.vfx.jumpBurst.emitParticleAt(
@@ -125,15 +89,13 @@ class Platformer extends Phaser.Scene {
         }
     }
 
-    // ── Collectible callbacks (referenced by LevelSetup.addColliders) ──────
-
+    // Collectible callbacks
     collectCoin(player, coin) {
         coin.destroy();
         this.score += 100;
         this.sound.play("collect");
         my.vfx.collectBurst.emitParticleAt(coin.x, coin.y, 10);
 
-        // Activate all chasers on the first coin collected
         if (!this.firstCoinCollected) {
             this.firstCoinCollected = true;
             this.chasers.getChildren().forEach(c => {
@@ -151,33 +113,24 @@ class Platformer extends Phaser.Scene {
         my.vfx.collectBurst.emitParticleAt(key.x, key.y, 10);
         this.keyText.setText("Key: ✓").setColor("#ffbb00");
 
-        // Remove the physical door barrier
         if (this.doorCollider) this.doorCollider.destroy();
-
-        // Door stays solid — no visual change needed
     }
 
-    // ── Level progression ─────────────────────────────────────────────────
-
+    // Level progression
     completeLevel() {
         this.levelComplete = true;
         this.sound.play("openDoor");
         this.score += 500;
 
-        // Gray out the door to show it has been unlocked and used
         if (this.doorSprite) this.doorSprite.setAlpha(0.4);
 
-        // Auto-walk the player toward the nearest ladder then climb it,
-        // then show the completion UI after 2 s.
-        // PlayerController input is blocked by levelComplete flag.
         const player = my.sprite.player;
 
-        // Find the bottom-most tile of the ladder stack closest to the player by X.
-        // First group ladders by X position, then pick the closest group,
-        // then take the tile with the highest Y (ground level entry point).
+        // Find the bottom-most ladder tile closest to the player by X, so the
+        // player walks to the base of the nearest ladder and climbs out.
         const laddersByX = {};
         my.sprite.ladders.getChildren().forEach(ladder => {
-            const key = Math.round(ladder.x / 10) * 10; // bucket by X
+            const key = Math.round(ladder.x / 10) * 10;
             if (!laddersByX[key]) laddersByX[key] = [];
             laddersByX[key].push(ladder);
         });
@@ -188,12 +141,10 @@ class Platformer extends Phaser.Scene {
             const dist = Math.abs(group[0].x - player.x);
             if (dist < closestDist) {
                 closestDist  = dist;
-                // Pick the bottom-most tile in this group as the walk target
                 targetLadder = group.reduce((a, b) => a.y > b.y ? a : b);
             }
         });
 
-        // ── Camera zoom in on player ─────────────────────────────────
         const cam = this.cameras.main;
         this.tweens.add({
             targets:  cam,
@@ -202,12 +153,9 @@ class Platformer extends Phaser.Scene {
             ease:     "Sine.easeInOut"
         });
 
-        // Fade to black over the last 1 second of the cutscene
         this.time.delayedCall(1000, () => {
             cam.fadeOut(1000, 0, 0, 0);
         });
-
-        const irisEvent = null; // no iris, keeping variable name for cleanup below
 
         this.exitWalkEvent = this.time.addEvent({
             delay: 16,
@@ -218,13 +166,11 @@ class Platformer extends Phaser.Scene {
                 const onLadder = this.physics.overlap(player, my.sprite.ladders);
 
                 if (onLadder) {
-                    // On the ladder — stop horizontal movement and climb up
                     player.body.setAllowGravity(false);
                     player.body.setVelocityX(0);
                     player.body.setVelocityY(-150);
                     player.anims.play("player-walk", true);
                 } else if (targetLadder) {
-                    // Walk toward the base of the ladder
                     const dir = targetLadder.x > player.x ? 1 : -1;
                     player.body.setAllowGravity(true);
                     player.body.setVelocityX(MOVE_SPEED * dir);
@@ -234,14 +180,12 @@ class Platformer extends Phaser.Scene {
             }
         });
 
-        // After the walk, stop the player and show the UI
         this.time.delayedCall(2000, () => {
             if (player.active) {
                 player.body.setVelocityX(0);
                 player.body.setVelocityY(0);
                 player.body.setAllowGravity(true);
             }
-            // Reset zoom, clear the fade, then show UI over solid black backdrop
             cam.setZoom(1);
             cam.resetFX();
             this.showLevelComplete();
@@ -249,7 +193,6 @@ class Platformer extends Phaser.Scene {
     }
 
     showLevelComplete() {
-        // Level 3 goes straight to the win screen
         if (this.currentLevel >= 3) {
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once("camerafadeoutcomplete", () => {
@@ -261,7 +204,6 @@ class Platformer extends Phaser.Scene {
             return;
         }
 
-        // Pure black backdrop at depth 500 so it covers everything including HUD
         this.add.rectangle(
             this.scale.width / 2, this.scale.height / 2,
             this.scale.width, this.scale.height, 0x000000, 1
@@ -338,8 +280,7 @@ class Platformer extends Phaser.Scene {
         this.cameras.main.fadeIn(500, 0, 0, 0);
     }
 
-    // ── Player death ──────────────────────────────────────────────────────
-
+    // Player death
     playerDie() {
         if (this.isDying) return;
         this.isDying = true;
@@ -347,14 +288,12 @@ class Platformer extends Phaser.Scene {
         this.score = 0;
         this.lives--;
 
-        // Death burst before the fade
         if (my.sprite.player) {
             my.vfx.jumpBurst.emitParticleAt(my.sprite.player.x, my.sprite.player.y, 20);
         }
 
         this.time.delayedCall(700, () => {
             if (this.lives <= 0) {
-                // Game over — restart from level 1
                 this.cameras.main.fadeOut(400, 0, 0, 0);
                 this.cameras.main.once("camerafadeoutcomplete", () => {
                     this.scene.start("Platformer", {
@@ -363,7 +302,6 @@ class Platformer extends Phaser.Scene {
                     });
                 });
             } else {
-                // Respawn instantly — pass camera position so it can linger there
                 this.scene.restart({
                     level:     this.currentLevel,
                     lives:     this.lives,
