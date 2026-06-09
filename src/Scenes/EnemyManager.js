@@ -1,3 +1,4 @@
+// manages all enemy behavior including patrollers and chasers
 class EnemyManager {
     constructor(scene) {
         this.scene = scene;
@@ -8,22 +9,25 @@ class EnemyManager {
         this.updateChasers(delta);
     }
 
-    // Patrollers
+    // move patrollers back and forth, turning at walls and edges
     updatePatrollers() {
         const groundLayer = this.scene.levelSetup.groundLayer;
 
         this.scene.patrollers.getChildren().forEach(enemy => {
             if (!enemy.isAlive || !enemy.body) return;
 
+            // pause briefly after turning
             if (enemy.pauseTimer > 0) {
                 enemy.pauseTimer -= this.scene.game.loop.delta;
                 enemy.body.setVelocityX(0);
                 return;
             }
 
+            // turn around if blocked by a wall
             if (enemy.body.blocked.left)  enemy.patrolDir =  1;
             if (enemy.body.blocked.right) enemy.patrolDir = -1;
 
+            // turn around if the next step has no ground
             if (enemy.body.blocked.down && groundLayer) {
                 const probeX   = enemy.x + enemy.patrolDir * (enemy.body.halfWidth + 6);
                 const probeY   = enemy.body.bottom + 8;
@@ -43,7 +47,7 @@ class EnemyManager {
         });
     }
 
-    // True if there is no solid ground tile one step ahead at foot level.
+    // returns true if there is no ground tile one step ahead
     _edgeAhead(enemy, dir) {
         const groundLayer = this.scene.levelSetup.groundLayer;
         if (!enemy.body.blocked.down || !groundLayer) return false;
@@ -53,7 +57,7 @@ class EnemyManager {
         return !tile || !tile.properties || !tile.properties.collides;
     }
 
-    // Chasers
+    // move chasers toward the player when in range, with jumping and wall-jump logic
     updateChasers(delta) {
         const player = my.sprite.player;
         if (!player || !player.body) return;
@@ -68,6 +72,7 @@ class EnemyManager {
             if (enemy.lastStuckX   === undefined) enemy.lastStuckX   = enemy.x;
             if (enemy.jumpCooldown === undefined) enemy.jumpCooldown = 0;
 
+            // start chasing when close enough, stop when far enough away
             const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, px, py);
             if (dist < CHASE_RANGE)       enemy.chasing = true;
             if (dist > CHASE_RANGE * 1.4) enemy.chasing = false;
@@ -75,6 +80,7 @@ class EnemyManager {
             if (enemy.wallJumpCooldown > 0) enemy.wallJumpCooldown -= delta;
             if (enemy.jumpCooldown     > 0) enemy.jumpCooldown     -= delta;
 
+            // idle patrol when not chasing
             if (!enemy.chasing) {
                 if (enemy.body.blocked.left)  enemy.idleDir = 1;
                 if (enemy.body.blocked.right) enemy.idleDir = -1;
@@ -90,7 +96,7 @@ class EnemyManager {
             const dirToPlayer = px < enemy.x ? -1 : 1;
             const sameXZone   = Math.abs(px - enemy.x) < 12;
 
-            // If the chaser hasn't moved much in 900ms, jump to break free.
+            // jump to get unstuck if barely moving for 900ms
             enemy.stuckTimer += delta;
             if (enemy.stuckTimer >= 900) {
                 enemy.stuckTimer = 0;
@@ -108,8 +114,7 @@ class EnemyManager {
             const playerBelow = py > enemy.y + dyThreshold;
 
             if (playerAbove) {
-                // Player is on a higher platform — navigate toward their X,
-                // refuse edges, and jump when hitting walls or standing below them.
+                // player is higher up — move toward them and jump at walls or ledges
                 const edge = this._edgeAhead(enemy, dirToPlayer);
                 enemy.body.setVelocityX(edge ? 0 : CHASE_SPEED * dirToPlayer);
 
@@ -122,7 +127,7 @@ class EnemyManager {
                     }
                 }
 
-                // Wall-jump while airborne to navigate shafts.
+                // wall-jump while airborne to get up shafts
                 if (!onGround && enemy.wallJumpCooldown <= 0) {
                     if (enemy.body.blocked.left) {
                         enemy.body.setVelocityX( WALL_JUMP_VX * 1.2);
@@ -136,11 +141,11 @@ class EnemyManager {
                 }
 
             } else if (playerBelow) {
-                // Player is on a lower platform — walk off edges intentionally.
+                // player is lower — walk off edges on purpose to drop down
                 enemy.body.setVelocityX(CHASE_SPEED * dirToPlayer);
 
             } else {
-                // Same level — direct chase; jump over obstacles.
+                // same level — run straight at the player and jump over walls
                 const edge = this._edgeAhead(enemy, dirToPlayer);
                 enemy.body.setVelocityX((edge && Math.abs(px - enemy.x) > 20) ? 0 : CHASE_SPEED * dirToPlayer);
 
@@ -158,17 +163,20 @@ class EnemyManager {
         });
     }
 
-    // Contact callbacks
+    // called when the player touches an enemy
     handleContact(player, enemy) {
         if (!enemy.isAlive) return;
+        // ignore contact while the player is invulnerable
         if (player.invulnerable) return;
 
+        // stomp if falling and above the enemy
         const isStomping = player.body.velocity.y > 0 &&
             player.body.bottom < enemy.body.top + 8;
 
         if (isStomping) {
             this.killEnemy(enemy);
             player.body.setVelocityY(-ENEMY_STOMP_VY);
+            // brief invuln so the same stomp can't trigger twice
             player.invulnerable = true;
             player.invulnTimer  = 400;
         } else {
@@ -176,6 +184,7 @@ class EnemyManager {
         }
     }
 
+    // fade the enemy out and remove it
     killEnemy(enemy) {
         if (!enemy.isAlive) return;
         enemy.isAlive = false;
