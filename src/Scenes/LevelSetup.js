@@ -365,6 +365,36 @@ class LevelSetup {
         const worldH = this.worldH;
         const worldW = this.worldW;
 
+        // ── Skip cinematic on respawn: linger at death spot, pan to player ─
+        if (scene.skipPan) {
+            const spawnScrollX = Phaser.Math.Clamp(
+                player.x - cam.width  / 2, 0, this.worldW - cam.width
+            );
+            const spawnScrollY = Phaser.Math.Clamp(
+                player.y - cam.height / 2, 0, this.worldH - cam.height
+            );
+
+            // Start from where the player died if we have it, otherwise spawn
+            cam.scrollX = scene.deathCamX !== null ? scene.deathCamX : spawnScrollX;
+            cam.scrollY = scene.deathCamY !== null ? scene.deathCamY : spawnScrollY;
+
+            // Brief pause at the death location, then pan to the spawn
+            scene.time.delayedCall(600, () => {
+                scene.tweens.add({
+                    targets:  cam,
+                    scrollX:  spawnScrollX,
+                    scrollY:  spawnScrollY,
+                    duration: 700,
+                    ease:     "Sine.easeInOut",
+                    onComplete: () => {
+                        cam.startFollow(player, true, CAM_LERP_X, CAM_LERP_Y);
+                        scene.cameraReady = true;
+                    }
+                });
+            });
+            return;
+        }
+
         // ── Start at the exit door (fallback: map centre) ─────────────
         const startX = this.doorX !== undefined ? this.doorX : worldW / 2;
         const startY = this.doorY !== undefined ? this.doorY : worldH / 2;

@@ -44,6 +44,9 @@ class Platformer extends Phaser.Scene {
         this.doorCollider       = null;
 
         this.abilities = data.abilities || { doubleJump: false, wallJump: false };
+        this.skipPan   = data.skipPan  || false;
+        this.deathCamX = data.deathCamX !== undefined ? data.deathCamX : null;
+        this.deathCamY = data.deathCamY !== undefined ? data.deathCamY : null;
     }
 
     // ── Create ────────────────────────────────────────────────────────────
@@ -350,13 +353,15 @@ class Platformer extends Phaser.Scene {
                     });
                 });
             } else {
-                // Respawn on the same level with remaining lives
-                this.cameras.main.fadeOut(300, 0, 0, 0);
-                this.cameras.main.once("camerafadeoutcomplete", () => {
-                    this.scene.restart({
-                        level: this.currentLevel, lives: this.lives,
-                        score: this.score, abilities: this.abilities
-                    });
+                // Respawn instantly — pass camera position so it can linger there
+                this.scene.restart({
+                    level:     this.currentLevel,
+                    lives:     this.lives,
+                    score:     this.score,
+                    abilities: this.abilities,
+                    skipPan:   true,
+                    deathCamX: this.cameras.main.scrollX,
+                    deathCamY: this.cameras.main.scrollY
                 });
             }
         });
