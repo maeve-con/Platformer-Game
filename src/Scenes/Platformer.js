@@ -140,15 +140,7 @@ class Platformer extends Phaser.Scene {
         // Remove the physical door barrier
         if (this.doorCollider) this.doorCollider.destroy();
 
-        // Animate the door bobbing to show it's open
-        if (this.doorSprite) {
-            this.doorSprite.setAlpha(1);
-            this.tweens.add({
-                targets:  this.doorSprite,
-                y:        this.doorSprite.y - 4,
-                duration: 500, yoyo: true, repeat: -1, ease: "Sine.easeInOut"
-            });
-        }
+        // Door stays solid — no visual change needed
     }
 
     // ── Level progression ─────────────────────────────────────────────────
@@ -158,6 +150,72 @@ class Platformer extends Phaser.Scene {
         this.sound.play("openDoor");
         this.score += 500;
 
+        // Gray out the door to show it has been unlocked and used
+        if (this.doorSprite) this.doorSprite.setAlpha(0.4);
+
+        // Auto-walk the player toward the nearest ladder then climb it,
+        // then show the completion UI after 2 s.
+        // PlayerController input is blocked by levelComplete flag.
+        const player = my.sprite.player;
+
+        // Find the bottom-most tile of the ladder stack closest to the player by X.
+        // First group ladders by X position, then pick the closest group,
+        // then take the tile with the highest Y (ground level entry point).
+        const laddersByX = {};
+        my.sprite.ladders.getChildren().forEach(ladder => {
+            const key = Math.round(ladder.x / 10) * 10; // bucket by X
+            if (!laddersByX[key]) laddersByX[key] = [];
+            laddersByX[key].push(ladder);
+        });
+
+        let targetLadder = null;
+        let closestDist  = Infinity;
+        Object.values(laddersByX).forEach(group => {
+            const dist = Math.abs(group[0].x - player.x);
+            if (dist < closestDist) {
+                closestDist  = dist;
+                // Pick the bottom-most tile in this group as the walk target
+                targetLadder = group.reduce((a, b) => a.y > b.y ? a : b);
+            }
+        });
+
+        this.exitWalkEvent = this.time.addEvent({
+            delay: 16,
+            repeat: Math.round(2000 / 16),
+            callback: () => {
+                if (!player.active) return;
+
+                const onLadder = this.physics.overlap(player, my.sprite.ladders);
+
+                if (onLadder) {
+                    // On the ladder — stop horizontal movement and climb up
+                    player.body.setAllowGravity(false);
+                    player.body.setVelocityX(0);
+                    player.body.setVelocityY(-150);
+                    player.anims.play("player-walk", true);
+                } else if (targetLadder) {
+                    // Walk toward the base of the ladder
+                    const dir = targetLadder.x > player.x ? 1 : -1;
+                    player.body.setAllowGravity(true);
+                    player.body.setVelocityX(MOVE_SPEED * dir);
+                    player.setFlipX(dir < 0);
+                    player.anims.play("player-walk", true);
+                }
+            }
+        });
+
+        // After the walk, stop the player and show the UI
+        this.time.delayedCall(2000, () => {
+            if (player.active) {
+                player.body.setVelocityX(0);
+                player.body.setVelocityY(0);
+                player.body.setAllowGravity(true);
+            }
+            this.showLevelComplete();
+        });
+    }
+
+    showLevelComplete() {
         // Level 3 goes straight to the win screen
         if (this.currentLevel >= 3) {
             this.cameras.main.fadeOut(500, 0, 0, 0);

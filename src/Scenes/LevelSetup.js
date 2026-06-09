@@ -125,7 +125,7 @@ class LevelSetup {
                     scene.doorSprite.body.allowGravity = false;
                     scene.doorSprite.body.moves        = false;
                     scene.doorSprite.body.immovable    = true;
-                    scene.doorSprite.setAlpha(0.4); // dim until unlocked
+                    // door stays at full alpha — no visual change until player walks through
                     // Store door position so runCameraPan() can start there
                     this.doorX = cx;
                     this.doorY = cy;
