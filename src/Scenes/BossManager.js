@@ -14,8 +14,8 @@ class BossManager {
         const boss = this.boss;
         boss.body.allowGravity = false;
         boss.body.setSize(51, 73);
-        boss.hp        = BOSS_MAX_HP;
-        boss.phase     = 1;
+        boss.hp        = (scene.bossHp !== null && scene.bossHp !== undefined) ? scene.bossHp : BOSS_MAX_HP;
+        boss.phase     = boss.hp <= BOSS_MAX_HP / 2 ? 2 : 1;
         boss.dir       = 1;
         boss.fireTimer = 0;
         boss.isAlive   = true;
@@ -57,17 +57,34 @@ class BossManager {
         const boss = this.boss;
         if (!boss || !boss.body || !boss.isAlive) return;
 
-        this.checkPhaseTransition();
+        this.checkPhaseTransition(delta);
         this.moveBoss();
         this.handleFiring(delta);
         this.refreshHPBar();
     }
 
-    checkPhaseTransition() {
-        if (this.boss.hp <= BOSS_MAX_HP / 2 && this.boss.phase === 1) {
-            this.boss.phase = 2;
-            this.emitPhaseChangeBurst(this.boss.x, this.boss.y);
+    checkPhaseTransition(delta) {
+        const boss = this.boss;
+
+        // Trigger phase 2 when HP drops to half.
+        if (boss.hp <= BOSS_MAX_HP / 2 && boss.phase === 1) {
+            boss.phase = 2;
+            this.emitPhaseChangeBurst(boss.x, boss.y);
             this.scene.cameras.main.shake(400, 0.012);
+            return;
+        }
+
+        // While in phase 2, 10% chance per second to revert to phase 1.
+        if (boss.phase === 2) {
+            boss.revertTimer = (boss.revertTimer || 0) + delta;
+            if (boss.revertTimer >= 1000) {
+                boss.revertTimer = 0;
+                if (Math.random() < 0.10) {
+                    boss.phase = 1;
+                    this.emitPhaseChangeBurst(boss.x, boss.y);
+                    this.scene.cameras.main.shake(200, 0.006);
+                }
+            }
         }
     }
 
@@ -96,6 +113,7 @@ class BossManager {
         const boss   = this.boss;
         const player = my.sprite.player;
         if (!player || !player.body) return;
+        if (this.scene.cutsceneActive) return;
 
         const fireRate = boss.phase === 2 ? 1200 : 2200;
         boss.fireTimer -= delta;
@@ -172,25 +190,71 @@ class BossManager {
         const boss  = this.boss;
         const scene = this.scene;
 
-        boss.isAlive = false;
-        scene.cameras.main.shake(600, 0.02);
-        this.emitPhaseChangeBurst(boss.x, boss.y);
-        scene.sound.play("death");
-        scene.score += 1000;
+        boss.isAlive    = false;
+        scene.levelComplete = true; // prevent player input / further damage
+        scene.score    += 1000;
 
+        // --- Slow motion ---
+        scene.tweens.add({
+            targets:  scene.time,   // slow the Phaser time scale
+            timeScale: 0.15,
+            duration: 300,
+            ease:     "Sine.easeOut"
+        });
+        scene.physics.world.timeScale = 6; // inverse: higher = slower physics
+
+        // --- Continuous VFX explosions across the boss body ---
+        let burstCount = 0;
+        const maxBursts = 4;
+        const burstEvent = scene.time.addEvent({
+            delay:    80,          // real-time ms between bursts
+            repeat:   maxBursts - 1,
+            callback: () => {
+                if (!boss.active) return;
+                const ox = boss.x + Phaser.Math.Between(-40, 40);
+                const oy = boss.y + Phaser.Math.Between(-40, 40);
+                my.vfx.bossHit.emitParticleAt(ox, oy, 20);
+                scene.cameras.main.shake(80, 0.01);
+                burstCount++;
+            }
+        });
+
+        // --- Boss spins and fades out over the slow-mo window ---
         scene.tweens.add({
             targets:  boss,
             alpha:    0,
-            duration: 600,
-            onComplete: () => {
-                boss.destroy();
-                if (scene.doorSprite) {
-                    if (scene.doorCollider) scene.doorCollider.destroy();
-                    scene.doorSprite.setAlpha(1);
-                    scene.hasKey = true;
-                    scene.keyText.setText("Boss defeated!").setColor("#ff4444");
-                }
-            }
+            angle:    720,
+            scaleX:   3,
+            scaleY:   3,
+            duration: maxBursts * 80 + 200,
+            ease:     "Sine.easeIn",
+            onComplete: () => { if (boss.active) boss.destroy(); }
+        });
+
+        // --- After the explosion show, restore time and fade to credits ---
+        const totalDuration = maxBursts * 80 + 400;
+        scene.time.delayedCall(totalDuration, () => {
+            // Restore normal time scale
+            scene.tweens.add({
+                targets:  scene.time,
+                timeScale: 1,
+                duration: 400,
+                ease:     "Sine.easeIn"
+            });
+            scene.physics.world.timeScale = 1;
+
+            scene.cameras.main.shake(500, 0.025);
+
+            // Big final camera shake then fade to black
+            scene.time.delayedCall(600, () => {
+                scene.cameras.main.fadeOut(1200, 0, 0, 0);
+                scene.cameras.main.once("camerafadeoutcomplete", () => {
+                    scene.scene.start("Platformer", {
+                        level: "win", lives: scene.lives,
+                        score: scene.score, abilities: scene.abilities
+                    });
+                });
+            });
         });
     }
 

@@ -307,10 +307,61 @@ class LevelSetup {
         const worldW = this.worldW;
         const worldH = this.worldH;
 
-        // Boss level — skip the cinematic entirely and jump straight to gameplay.
+        // Boss level — zoom in on the boss, then pan+zoom out to the player.
         if (scene.currentLevel === 4 && !scene.skipPan) {
-            cam.startFollow(player, true, CAM_LERP_X, CAM_LERP_Y);
-            scene.cameraReady = true;
+            const boss = this.bossManager.boss;
+
+            // Freeze boss firing and player input for the duration.
+            scene.cutsceneActive = true;
+
+            // Start zoomed in on the boss.
+            const bossScrollX = Phaser.Math.Clamp(
+                (boss ? boss.x : worldW / 2) - cam.width  / 2, 0, worldW - cam.width
+            );
+            const bossScrollY = Phaser.Math.Clamp(
+                (boss ? boss.y : worldH / 2) - cam.height / 2, 0, worldH - cam.height
+            );
+            cam.setZoom(3);
+            cam.scrollX = bossScrollX;
+            cam.scrollY = bossScrollY;
+
+            // Warning text
+            const warnText = scene.add.text(
+                scene.scale.width / 2, scene.scale.height / 2 - 40,
+                "⚠  BOSS APPROACHING  ⚠",
+                { fontFamily: "monospace", fontSize: "14px", color: "#ff4444",
+                  stroke: "#000000", strokeThickness: 3 }
+            ).setOrigin(0.5).setScrollFactor(0).setDepth(201).setAlpha(0);
+
+            // Flicker the warning text in.
+            scene.tweens.add({
+                targets:  warnText,
+                alpha:    1,
+                duration: 200,
+                yoyo:     true,
+                repeat:   3,
+            });
+
+            // After lingering on the boss, zoom + pan out to the player spawn.
+            const endScrollX = Phaser.Math.Clamp(player.x - cam.width  / 2, 0, worldW - cam.width);
+            const endScrollY = Phaser.Math.Clamp(player.y - cam.height / 2, 0, worldH - cam.height);
+
+            scene.time.delayedCall(1800, () => {
+                warnText.destroy();
+                scene.tweens.add({
+                    targets:  cam,
+                    zoom:     1,
+                    scrollX:  endScrollX,
+                    scrollY:  endScrollY,
+                    duration: 1800,
+                    ease:     "Sine.easeInOut",
+                    onComplete: () => {
+                        scene.cutsceneActive = false;
+                        cam.startFollow(player, true, CAM_LERP_X, CAM_LERP_Y);
+                        scene.cameraReady = true;
+                    }
+                });
+            });
             return;
         }
 

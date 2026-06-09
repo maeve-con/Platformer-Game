@@ -161,6 +161,7 @@ class EnemyManager {
     // Contact callbacks
     handleContact(player, enemy) {
         if (!enemy.isAlive) return;
+        if (player.invulnerable) return;
 
         const isStomping = player.body.velocity.y > 0 &&
             player.body.bottom < enemy.body.top + 8;
@@ -168,6 +169,8 @@ class EnemyManager {
         if (isStomping) {
             this.killEnemy(enemy);
             player.body.setVelocityY(-ENEMY_STOMP_VY);
+            player.invulnerable = true;
+            player.invulnTimer  = 400;
         } else {
             if (!player.invulnerable) this.scene.playerDie();
         }

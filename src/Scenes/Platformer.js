@@ -16,13 +16,16 @@ class Platformer extends Phaser.Scene {
         this.wallCoyoteTimer    = 0;
         this.lastWallDir        = 0;
         this.cameraReady        = false;
+        this.cutsceneActive     = false;
         this.doorSprite         = null;
         this.doorCollider       = null;
 
         this.abilities = data.abilities || { doubleJump: false, wallJump: false };
         this.skipPan   = data.skipPan   || false;
+        if (this.currentLevel === 4 && !this.skipPan) this.lives = 3;
         this.deathCamX = data.deathCamX !== undefined ? data.deathCamX : null;
         this.deathCamY = data.deathCamY !== undefined ? data.deathCamY : null;
+        this.bossHp    = data.bossHp    !== undefined ? data.bossHp    : null;
     }
 
     create() {
@@ -244,29 +247,75 @@ class Platformer extends Phaser.Scene {
     }
 
     showEndScreen() {
-        this.add.rectangle(
-            this.scale.width / 2, this.scale.height / 2,
-            this.scale.width, this.scale.height, 0x000000, 0.7
-        ).setScrollFactor(0).setDepth(100);
+        const W = this.scale.width;
+        const H = this.scale.height;
+        const depth = 500;
 
-        this.add.text(this.scale.width / 2, this.scale.height / 2 - 60,
-            "YOU WIN!",
-            { fontFamily: "monospace", fontSize: "56px", color: "#f1c40f" }
-        ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+        // Full black backdrop
+        this.add.rectangle(W / 2, H / 2, W, H, 0x000000)
+            .setScrollFactor(0).setDepth(depth);
 
-        this.add.text(this.scale.width / 2, this.scale.height / 2,
-            `Final Score: ${this.score}`,
-            { fontFamily: "monospace", fontSize: "28px", color: "#f1c40f" }
-        ).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+        const mono = (size, color = "#ffffff") =>
+            ({ fontFamily: "monospace", fontSize: `${size}px`, color });
 
-        const button = this.add.text(
-            this.scale.width / 2, this.scale.height / 2 + 60,
-            "[ PLAY AGAIN ]",
-            { fontFamily: "monospace", fontSize: "32px", color: "#f1c40f" }
-        ).setOrigin(0.5).setScrollFactor(0).setDepth(100).setInteractive();
+        // Static header
+        this.add.text(W / 2, 60, "✦  YOU WIN  ✦", mono(48, "#f1c40f"))
+            .setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
 
-        button.on("pointerover", () => button.setColor("#ffffff"));
-        button.on("pointerout",  () => button.setColor("#62dd99"));
+        this.add.text(W / 2, 118, `Final Score: ${this.score}`, mono(22, "#ffffff"))
+            .setOrigin(0.5).setScrollFactor(0).setDepth(depth + 1);
+
+        // Scrolling credits container
+        const lines = [
+            { text: "",                            size: 14, color: "#ffffff" },
+            { text: "─────────────────────",       size: 14, color: "#555555" },
+            { text: "CREDITS",                     size: 28, color: "#f1c40f" },
+            { text: "─────────────────────",       size: 14, color: "#555555" },
+            { text: "",                            size: 14 },
+            { text: "DESIGN & PROGRAMMING",        size: 16, color: "#aaaaaa" },
+            { text: "Devin Conley & Kenneth Tran", size: 22, color: "#ffffff" },
+            { text: "",                            size: 14 },
+            { text: "ART & TILES",                 size: 16, color: "#aaaaaa" },
+            { text: "Kenney Assets",               size: 22, color: "#ffffff" },
+            { text: "",                            size: 14 },
+            { text: "─────────────────────",       size: 14, color: "#555555" },
+            { text: "",                            size: 14 },
+            { text: "Thanks for playing!",         size: 20, color: "#62dd99" },
+            { text: "",                            size: 28 },
+        ];
+
+        const container = this.add.container(0, 0).setDepth(depth + 1).setScrollFactor(0);
+        let yOffset = H + 20; // start just below screen
+
+        lines.forEach(line => {
+            const t = this.add.text(
+                W / 2, yOffset,
+                line.text || "",
+                mono(line.size || 18, line.color || "#ffffff")
+            ).setOrigin(0.5, 0).setScrollFactor(0);
+            container.add(t);
+            yOffset += (line.size || 18) + 10;
+        });
+
+        const totalHeight = yOffset;
+        const scrollDuration = Math.max(8000, totalHeight * 18);
+
+        this.tweens.add({
+            targets:  container,
+            y:        -(totalHeight + 20),
+            duration: scrollDuration,
+            ease:     "Linear",
+        });
+
+        // Play Again button (always visible at bottom)
+        const btnBg = this.add.rectangle(W / 2, H - 36, 220, 44, 0x222222)
+            .setScrollFactor(0).setDepth(depth + 2).setStrokeStyle(2, 0xf1c40f);
+
+        const button = this.add.text(W / 2, H - 36, "[ PLAY AGAIN ]", mono(22, "#f1c40f"))
+            .setOrigin(0.5).setScrollFactor(0).setDepth(depth + 3).setInteractive();
+
+        button.on("pointerover", () => { button.setColor("#ffffff"); btnBg.setFillStyle(0x444444); });
+        button.on("pointerout",  () => { button.setColor("#f1c40f"); btnBg.setFillStyle(0x222222); });
         button.on("pointerdown", () => {
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once("camerafadeoutcomplete", () => {
@@ -277,7 +326,7 @@ class Platformer extends Phaser.Scene {
             });
         });
 
-        this.cameras.main.fadeIn(500, 0, 0, 0);
+        this.cameras.main.fadeIn(800, 0, 0, 0);
     }
 
     // Player death
@@ -296,10 +345,18 @@ class Platformer extends Phaser.Scene {
             if (this.lives <= 0) {
                 this.cameras.main.fadeOut(400, 0, 0, 0);
                 this.cameras.main.once("camerafadeoutcomplete", () => {
-                    this.scene.start("Platformer", {
-                        level: 1, lives: 3, score: 0,
-                        abilities: { doubleJump: false, wallJump: false }
-                    });
+                    if (this.currentLevel === 4) {
+                        // Checkpoint: restart the boss level with fresh lives.
+                        this.scene.start("Platformer", {
+                            level: 4, lives: 3, score: this.score,
+                            abilities: this.abilities
+                        });
+                    } else {
+                        this.scene.start("Platformer", {
+                            level: 1, lives: 3, score: 0,
+                            abilities: { doubleJump: false, wallJump: false }
+                        });
+                    }
                 });
             } else {
                 this.scene.restart({
@@ -309,7 +366,8 @@ class Platformer extends Phaser.Scene {
                     abilities: this.abilities,
                     skipPan:   true,
                     deathCamX: this.cameras.main.scrollX,
-                    deathCamY: this.cameras.main.scrollY
+                    deathCamY: this.cameras.main.scrollY,
+                    bossHp:    this.bossManager.boss ? this.bossManager.boss.hp : null
                 });
             }
         });
