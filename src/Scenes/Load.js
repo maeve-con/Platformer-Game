@@ -23,7 +23,10 @@ class Load extends Phaser.Scene {
         // Enemy sprites
         this.load.setPath("./assets/Enemies/");
         this.load.image("patroller", "bat_fly.png");
-        //this.load.image("chaser", "chaser.png");
+        this.load.spritesheet("chaser", "tilemap-characters_packed.png", {
+            frameWidth:  24,
+            frameHeight: 24
+        });
         this.load.image("boss", "ghost.png");
 
         // Particles 
@@ -70,6 +73,14 @@ class Load extends Phaser.Scene {
             key: 'player-jump',
             frames: [{key: "char-walk"}],
             frameRate: 1,
+            repeat: -1
+        });
+
+        // chaser animation
+        this.anims.create({
+            key: 'chaser-walk',
+            frames: this.anims.generateFrameNumbers("chaser", { start: 4, end: 5 }),
+            frameRate: 8,
             repeat: -1
         });
 

@@ -33,6 +33,7 @@ class Platformer extends Phaser.Scene {
         this.lives              = data.lives !== undefined ? data.lives : 3;
         this.score              = data.score || 0;
         this.hasKey             = false;
+        this.firstCoinCollected = false;
         this.levelComplete      = false;
         this.isDying            = false;
         this.walkSoundPlaying   = false;
@@ -131,6 +132,16 @@ class Platformer extends Phaser.Scene {
         this.score += 100;
         this.sound.play("collect");
         my.vfx.collectBurst.emitParticleAt(coin.x, coin.y, 10);
+
+        // Activate all chasers on the first coin collected
+        if (!this.firstCoinCollected) {
+            this.firstCoinCollected = true;
+            this.chasers.getChildren().forEach(c => {
+                c.setVisible(true);
+                c.body.enable = true;
+                c.anims.play("chaser-walk");
+            });
+        }
     }
 
     collectKey(player, key) {

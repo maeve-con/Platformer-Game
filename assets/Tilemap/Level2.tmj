@@ -470,6 +470,19 @@
                  "width":18,
                  "x":648,
                  "y":18
+                }, 
+                {
+                 "gid":185,
+                 "height":24,
+                 "id":36,
+                 "name":"chaser",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":24,
+                 "x":0,
+                 "y":792
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -478,7 +491,7 @@
          "y":0
         }],
  "nextlayerid":3,
- "nextobjectid":35,
+ "nextobjectid":38,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.1",
@@ -1200,6 +1213,19 @@
                         }]
                 }],
          "tilewidth":18
+        }, 
+        {
+         "columns":9,
+         "firstgid":181,
+         "image":"tilemap-characters_packed.png",
+         "imageheight":72,
+         "imagewidth":216,
+         "margin":0,
+         "name":"tilemap-characters_packed",
+         "spacing":0,
+         "tilecount":27,
+         "tileheight":24,
+         "tilewidth":24
         }],
  "tilewidth":18,
  "type":"map",

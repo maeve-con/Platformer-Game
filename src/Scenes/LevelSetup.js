@@ -164,11 +164,15 @@ class LevelSetup {
                 }
 
                 case "chaser": {
-                    const c = scene.chasers.create(cx, cy, "tilemap_packed")
-                        .setFrame(ENEMY_CHASE_FRAME).setScale(SCALE / 1.5);
+                    const c = scene.chasers.create(cx, cy, "chaser")
+                        .setFrame(4).setScale(SCALE);
                     c.setCollideWorldBounds(true);
-                    c.isAlive   = true;
-                    c.chasing   = false;
+                    c.isAlive          = true;
+                    c.chasing          = false;
+                    c.wallJumpCooldown = 0;
+                    // Hidden and dormant until the player collects the first coin
+                    c.setVisible(false);
+                    c.body.enable = false;
                     break;
                 }
 

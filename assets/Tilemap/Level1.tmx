@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="150" height="50" tilewidth="18" tileheight="18" infinite="0" nextlayerid="13" nextobjectid="86">
+<map version="1.10" tiledversion="1.12.1" orientation="orthogonal" renderorder="right-down" width="150" height="50" tilewidth="18" tileheight="18" infinite="0" nextlayerid="13" nextobjectid="87">
  <editorsettings>
   <export target="Level1.tmj" format="json"/>
  </editorsettings>
@@ -510,11 +510,6 @@
   <object id="66" name="coin" gid="152" x="2088" y="162" width="18" height="18"/>
   <object id="67" name="coin" gid="152" x="2070" y="162" width="18" height="18"/>
   <object id="68" name="coin" gid="152" x="1800" y="666" width="18" height="18"/>
-  <object id="73" name="patroller" gid="181" x="803.303" y="718.962" width="19.9394" height="7.54545">
-   <properties>
-    <property name="patrolDirection" type="int" value="1"/>
-   </properties>
-  </object>
   <object id="74" name="ladder" gid="72" x="2664" y="198" width="18" height="18"/>
   <object id="75" name="ladder" gid="72" x="2664" y="180" width="18" height="18"/>
   <object id="76" name="ladder" gid="72" x="2664" y="162" width="18" height="18"/>
@@ -527,6 +522,11 @@
   <object id="83" name="ladder" gid="72" x="2664" y="36" width="18" height="18"/>
   <object id="84" name="ladder" gid="72" x="2664" y="18" width="18" height="18"/>
   <object id="85" name="patroller" gid="181" x="605.364" y="636.227" width="19.9394" height="7.54545">
+   <properties>
+    <property name="patrolDirection" type="int" value="1"/>
+   </properties>
+  </object>
+  <object id="86" name="patroller" gid="181" x="1023.36" y="386.894" width="19.9394" height="7.54545">
    <properties>
     <property name="patrolDirection" type="int" value="1"/>
    </properties>
