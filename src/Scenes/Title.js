@@ -26,7 +26,7 @@ class Title extends Phaser.Scene {
         ).setOrigin(0.5);
 
         this.add.text(W / 2, H * 0.38,
-            "Click the start button or press ENTER",
+            "Walk to Start Button to start game",
             { fontFamily: "monospace", fontSize: "18px", color: "#9fd6ff" }
         ).setOrigin(0.5);
 
