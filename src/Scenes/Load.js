@@ -9,6 +9,7 @@ class Load extends Phaser.Scene {
         this.load.tilemapTiledJSON("level-1", "Level1.tmj");
         this.load.tilemapTiledJSON("level-2", "Level2.tmj");
         this.load.tilemapTiledJSON("level-3", "Level3.tmj");
+        this.load.tilemapTiledJSON("level-4", "Boss.tmj");
         this.load.spritesheet("tilemap_packed", "tilemap_packed.png", {
             frameWidth: 18,
             frameHeight: 18
@@ -23,6 +24,7 @@ class Load extends Phaser.Scene {
         this.load.setPath("./assets/Enemies/");
         this.load.image("patroller", "bat_fly.png");
         //this.load.image("chaser", "chaser.png");
+        this.load.image("boss", "ghost.png");
 
         // Particles 
         this.load.setPath("./assets/Particles/");

@@ -71,6 +71,11 @@ class LevelSetup {
         let playerStartX = 100;
         let playerStartY = this.worldH - 100;
 
+        if (scene.currentLevel === 4) {
+            playerStartX = 250;
+            playerStartY = 300;
+        }
+
         if (!this.objectLayer) return { playerStartX, playerStartY };
 
         this.objectLayer.objects.forEach(obj => {

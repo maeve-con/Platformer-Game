@@ -32,12 +32,12 @@ class BossManager {
     spawnBoss(cx, cy) {
         const scene = this.scene;
 
-        this.boss = scene.physics.add.sprite(cx, cy, "tilemap_packed")
-            .setFrame(BOSS_FRAME).setScale(SCALE * 2.5).setDepth(8);
+        this.boss = scene.physics.add.sprite(cx, cy, "boss")
+           
 
         const boss = this.boss;
         boss.body.allowGravity = false;
-        boss.body.setSize(18, 18);  // raw tile size before scale is applied
+        boss.body.setSize(51, 73);  // raw tile size before scale is applied
         boss.hp        = BOSS_MAX_HP;
         boss.phase     = 1;
         boss.dir       = 1;
