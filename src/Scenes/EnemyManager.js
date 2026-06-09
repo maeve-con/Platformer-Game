@@ -93,8 +93,9 @@ class EnemyManager {
     handleContact(player, enemy) {
         if (!enemy.isAlive) return;
 
-        // Stomp: player is moving downward AND their feet are above enemy center
-        const isStomping = player.body.velocity.y > 0 && player.y < enemy.y - 4;
+        // Stomp: player is moving downward and their feet are above the enemy's top.
+        const isStomping = player.body.velocity.y > 0 &&
+            player.body.bottom < enemy.body.top + 8;
 
         if (isStomping) {
             this.killEnemy(enemy);

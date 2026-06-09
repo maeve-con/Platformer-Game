@@ -179,12 +179,22 @@ class BossManager {
     // Called by physics overlap in LevelSetup when player touches the boss.
     handleContact(player, boss) {
         if (!boss.isAlive) return;
+        // Accept top-side hits even if the overlap callback happens inside the boss body.
+        const bossTop = boss.body.top;
+        const bossH   = boss.body.height || 0;
+        // Use a generous threshold: either a fixed 80px or ~70% of the boss body height.
+        const generousThreshold = Math.max(80, bossH * 0.7);
 
-        const isStomping = player.body.velocity.y > 0 && player.y < boss.y - 8;
+        const isStomping = player.body.velocity.y > 0 &&
+            (player.body.bottom <= bossTop + generousThreshold || player.body.center.y < boss.body.center.y);
 
         if (isStomping) {
             this.damageBoss();
+            // Bounce the player and give a short invulnerability window so the overlap
+            // callback doesn't immediately re-trigger damage while inside the boss body.
             player.body.setVelocityY(-ENEMY_STOMP_VY);
+            player.invulnerable = true;
+            player.invulnTimer  = 350;
         } else {
             if (!player.invulnerable) this.scene.playerDie();
         }
