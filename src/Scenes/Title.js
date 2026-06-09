@@ -125,12 +125,12 @@ class Title extends Phaser.Scene {
         this.cameras.main.fadeOut(300, 0, 0, 0);
         this.cameras.main.once("camerafadeoutcomplete", () => {
             this.scene.start("Platformer", {
-                level: 1,
+                level: DEBUG_LEVEL,
                 lives: 3,
                 score: 0,
                 abilities: {
-                    doubleJump: false,
-                    wallJump: false
+                    doubleJump: DEBUG_LEVEL >= 3,
+                    wallJump: DEBUG_LEVEL >= 2
                 }
             });
         });

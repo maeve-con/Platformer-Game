@@ -141,7 +141,7 @@ class BossManager {
     fireProjectile(bx, by, tx, ty) {
         const scene = this.scene;
         const angle = Phaser.Math.Angle.Between(bx, by, tx, ty);
-        const speed = this.boss.phase === 2 ? 220 : 160;
+        const speed = this.boss.phase === 2 ? 200 : 160;
         const group = scene.bossProjectiles;
 
         const spawnProj = (a) => {
