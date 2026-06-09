@@ -85,7 +85,7 @@ class BossManager {
             boss.revertTimer = (boss.revertTimer || 0) + delta;
             if (boss.revertTimer >= 1000) {
                 boss.revertTimer = 0;
-                if (Math.random() < 0.10) {
+                if (Math.random() < 0.40) {
                     boss.phase = 1;
                     this.emitPhaseChangeBurst(boss.x, boss.y);
                     this.scene.cameras.main.shake(200, 0.006);
