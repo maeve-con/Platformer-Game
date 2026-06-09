@@ -179,6 +179,22 @@ class Platformer extends Phaser.Scene {
             }
         });
 
+        // ── Camera zoom in on player ─────────────────────────────────
+        const cam = this.cameras.main;
+        this.tweens.add({
+            targets:  cam,
+            zoom:     3,
+            duration: 600,
+            ease:     "Sine.easeInOut"
+        });
+
+        // Fade to black over the last 1 second of the cutscene
+        this.time.delayedCall(1000, () => {
+            cam.fadeOut(1000, 0, 0, 0);
+        });
+
+        const irisEvent = null; // no iris, keeping variable name for cleanup below
+
         this.exitWalkEvent = this.time.addEvent({
             delay: 16,
             repeat: Math.round(2000 / 16),
@@ -211,7 +227,11 @@ class Platformer extends Phaser.Scene {
                 player.body.setVelocityY(0);
                 player.body.setAllowGravity(true);
             }
+            // Reset zoom, keep screen black, then show UI on top
+            cam.setZoom(1);
+            cam.fadeOut(0, 0, 0, 0); // snap to black instantly so fadeIn starts from black
             this.showLevelComplete();
+            cam.fadeIn(600, 0, 0, 0);
         });
     }
 
